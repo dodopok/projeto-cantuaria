@@ -1,7 +1,7 @@
 <template>
   <div class="group cursor-pointer">
     <div class="relative aspect-[3/4.5] bg-cantuaria-charcoal mb-4 overflow-hidden border border-cantuaria-charcoal/5 shadow-sm group-hover:shadow-xl transition-all duration-500">
-      <img :src="document.thumbnail_url" :alt="document.title" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      <img :src="document.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'" :alt="document.title" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
       <div class="absolute inset-0 bg-cantuaria-oxford/0 group-hover:bg-cantuaria-oxford/20 transition-colors duration-500"></div>
       
       <!-- Badges -->
@@ -24,7 +24,7 @@
         {{ document.title }}
       </h3>
       <p class="font-sans text-xs text-cantuaria-charcoal/50 uppercase tracking-wider">
-        {{ document.authors.map(a => a.name).join(', ') }}
+        {{ authorsText }}
       </p>
       <div class="flex items-center gap-3 pt-2">
         <span class="text-[10px] text-cantuaria-charcoal/30 italic font-serif">
@@ -39,11 +39,15 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  document: {
-    type: Object,
-    required: true
+<script setup lang="ts">
+const props = defineProps<{
+  document: any
+}>()
+
+const authorsText = computed(() => {
+  if (!props.document.authors || props.document.authors.length === 0) {
+    return 'Autor Desconhecido'
   }
+  return props.document.authors.map((a: any) => a.name).join(', ')
 })
 </script>

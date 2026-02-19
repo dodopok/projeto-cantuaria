@@ -19,22 +19,34 @@
       </header>
 
       <section class="container mx-auto px-6 py-12">
-        <!-- Tabs -->
-        <div class="flex gap-8 border-b border-cantuaria-oxford/10 mb-8">
-          <button 
-            @click="currentTab = 'pending'"
-            :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
-            currentTab === 'pending' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
-          >
-            Pendentes ({{ pendingCount }})
-          </button>
-          <button 
-            @click="currentTab = 'published'"
-            :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
-            currentTab === 'published' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
-          >
-            Publicados
-          </button>
+        <!-- Tabs & Bulk Actions -->
+        <div class="flex flex-col md:flex-row justify-between items-center border-b border-cantuaria-oxford/10 mb-8 gap-4">
+          <div class="flex gap-8">
+            <button 
+              @click="currentTab = 'pending'"
+              :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
+              currentTab === 'pending' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
+            >
+              Pendentes ({{ pendingCount }})
+            </button>
+            <button 
+              @click="currentTab = 'published'"
+              :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
+              currentTab === 'published' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
+            >
+              Publicados
+            </button>
+          </div>
+
+          <div v-if="selectedIds.length > 0 && currentTab === 'pending'" class="pb-4 animate-fade-in">
+            <button 
+              @click="startBatchAnalysis"
+              class="flex items-center gap-2 px-6 py-2 bg-cantuaria-gold text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all"
+            >
+              <LucideSparkles class="w-4 h-4" />
+              Analisar {{ selectedIds.length }} selecionados com IA
+            </button>
+          </div>
         </div>
 
         <div v-if="loading" class="py-20 text-center">
@@ -50,6 +62,9 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-cantuaria-cream/50 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 border-b border-cantuaria-charcoal/5">
+                <th v-if="currentTab === 'pending'" class="px-6 py-4 w-10">
+                  <input type="checkbox" @change="toggleAll" :checked="allSelected" class="w-4 h-4 accent-cantuaria-oxford" />
+                </th>
                 <th class="px-6 py-4">Obra</th>
                 <th class="px-6 py-4">Data</th>
                 <th class="px-6 py-4 text-right">Ações</th>
@@ -57,6 +72,9 @@
             </thead>
             <tbody class="divide-y divide-cantuaria-charcoal/5">
               <tr v-for="item in items" :key="item.id" class="group hover:bg-cantuaria-cream/30 transition-colors">
+                <td v-if="currentTab === 'pending'" class="px-6 py-6">
+                  <input type="checkbox" v-model="selectedIds" :value="item.id" class="w-4 h-4 accent-cantuaria-oxford" />
+                </td>
                 <td class="px-6 py-6">
                   <div class="flex items-center gap-4">
                     <div class="w-10 h-10 bg-cantuaria-oxford/5 flex items-center justify-center rounded text-cantuaria-oxford overflow-hidden">
@@ -82,8 +100,105 @@
         </div>
       </section>
 
-      <!-- Review/Edit Modal -->
-      <div v-if="editingItem" class="fixed inset-0 z-[100] bg-cantuaria-oxford/95 backdrop-blur-md flex items-center justify-center p-4">
+      <!-- Batch Analysis Modal -->
+      <div v-if="batchAnalysisActive" class="fixed inset-0 z-[110] bg-cantuaria-oxford/98 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-7xl h-[90vh] flex flex-col shadow-2xl overflow-hidden relative animate-fade-in">
+          <header class="p-8 border-b border-cantuaria-charcoal/5 flex justify-between items-center bg-white">
+            <div>
+              <h3 class="font-serif text-3xl text-cantuaria-oxford">Processamento em Lote</h3>
+              <p class="text-xs text-cantuaria-charcoal/40 uppercase tracking-widest font-bold mt-1">Análise inteligente de múltiplos documentos simultaneamente</p>
+            </div>
+            <button v-if="!isAnalyzingBatch" @click="closeBatch" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-6 h-6" /></button>
+          </header>
+
+          <div class="flex-grow overflow-auto p-8 bg-cantuaria-cream/20">
+            <div class="grid grid-cols-1 gap-6">
+              <div v-for="res in batchResults" :key="res.id" class="border border-cantuaria-charcoal/10 p-6 rounded-sm bg-white shadow-sm transition-all hover:border-cantuaria-gold/50">
+                <div class="flex flex-col lg:flex-row gap-8">
+                  <!-- File Info & Status -->
+                  <div class="lg:w-1/4">
+                    <div class="flex items-center gap-3 mb-4">
+                      <LucideFileText v-if="res.status !== 'complete'" class="w-5 h-5 text-cantuaria-charcoal/20" />
+                      <LucideCheckCircle v-else class="w-5 h-5 text-green-600" />
+                      <span class="font-bold text-cantuaria-oxford truncate" :title="res.originalTitle">{{ res.originalTitle }}</span>
+                    </div>
+                    <div v-if="res.status === 'processing'" class="space-y-2">
+                      <div class="h-1 bg-cantuaria-oxford/5 overflow-hidden rounded-full">
+                        <div class="h-full bg-cantuaria-gold animate-progress-indefinite"></div>
+                      </div>
+                      <span class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-gold animate-pulse">Extraindo dados...</span>
+                    </div>
+                    <div v-else-if="res.status === 'error'" class="text-xs text-cantuaria-crimson bg-cantuaria-crimson/5 p-3 border border-cantuaria-crimson/10 rounded">
+                      {{ res.errorMessage }}
+                    </div>
+                    <div v-else-if="res.status === 'complete'" class="flex items-center gap-2 text-[10px] uppercase font-bold text-green-600">
+                      <span>Análise concluída</span>
+                    </div>
+                  </div>
+
+                  <!-- Editable Results -->
+                  <div v-if="res.status === 'complete'" class="lg:w-3/4 grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+                    <div class="space-y-4">
+                      <div class="space-y-1">
+                        <label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Título Final</label>
+                        <input type="text" v-model="res.data.title" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-sm font-serif bg-transparent" />
+                      </div>
+                      <div class="space-y-1">
+                        <label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Autores</label>
+                        <input type="text" v-model="res.data.authors_list" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent" />
+                      </div>
+                      <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                          <label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Ano</label>
+                          <input type="number" v-model="res.data.publication_year" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent" />
+                        </div>
+                        <div class="space-y-1">
+                          <label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Categoria</label>
+                          <input type="text" v-model="res.data.category_name" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent" />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="space-y-4">
+                      <div class="space-y-1">
+                        <label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Resumo</label>
+                        <textarea rows="3" v-model="res.data.summary" class="w-full border border-cantuaria-charcoal/10 p-2 focus:outline-none focus:border-cantuaria-gold text-xs leading-relaxed bg-cantuaria-cream/10"></textarea>
+                      </div>
+                      <div class="space-y-1">
+                        <label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Tags</label>
+                        <input type="text" v-model="res.data.tags_list" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <footer class="p-8 border-t border-cantuaria-charcoal/5 bg-cantuaria-cream/30 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">
+                {{ completedCount }} de {{ batchResults.length }} processados
+              </span>
+              <div v-if="isAnalyzingBatch" class="w-32 h-1 bg-cantuaria-oxford/5 rounded-full overflow-hidden">
+                <div class="h-full bg-cantuaria-gold animate-progress-indefinite"></div>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <button v-if="!isAnalyzingBatch" @click="closeBatch" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
+              <button 
+                @click="saveBatchResults" 
+                :disabled="isAnalyzingBatch || completedCount === 0 || publishingBatch"
+                class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all"
+              >
+                {{ publishingBatch ? 'Salvando Tudo...' : 'Publicar Todos Concluídos' }}
+              </button>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+      <!-- Single Review Modal -->
+      <div v-if="editingItem && !batchAnalysisActive" class="fixed inset-0 z-[100] bg-cantuaria-oxford/95 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl overflow-hidden relative animate-fade-in">
           <header class="p-6 border-b border-cantuaria-charcoal/5 flex justify-between items-center bg-white">
             <h3 class="font-serif text-2xl text-cantuaria-oxford">Gerenciamento de Documento</h3>
@@ -91,92 +206,53 @@
           </header>
 
           <div class="flex-grow flex overflow-hidden">
-            <!-- Left: Document Preview -->
             <div class="hidden lg:block w-1/2 bg-cantuaria-charcoal border-r border-cantuaria-charcoal/10 overflow-hidden">
               <Reader :url="editingItem.file_url" :type="editingItem.type" />
             </div>
 
-            <!-- Right: Edit Form -->
             <div class="w-full lg:w-1/2 overflow-y-auto p-8 lg:p-12 space-y-10">
               <div class="flex justify-between items-center border-b border-cantuaria-oxford/5 pb-6">
                 <h4 class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">Dados da Obra</h4>
-                <button 
-                  @click="analyzeWithAI" 
-                  :disabled="analyzing"
-                  class="flex items-center gap-2 px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50"
-                >
+                <button @click="analyzeWithAI" :disabled="analyzing" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50">
                   <LucideSparkles class="w-3.5 h-3.5" :class="{ 'animate-spin': analyzing }" />
                   {{ analyzing ? 'Analisando...' : 'Re-analisar com IA' }}
                 </button>
               </div>
 
-              <!-- Cover & Details -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="md:col-span-1">
                   <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 block mb-4">Capa</label>
-                  <div 
-                    @click="($refs.coverInput as HTMLInputElement).click()"
-                    class="aspect-[3/4.5] bg-cantuaria-cream/50 border-2 border-dashed border-cantuaria-charcoal/10 flex flex-col items-center justify-center p-4 cursor-pointer hover:border-cantuaria-oxford/30 transition-colors group relative overflow-hidden shadow-inner"
-                  >
+                  <div @click="($refs.coverInput as HTMLInputElement).click()" class="aspect-[3/4.5] bg-cantuaria-cream/50 border-2 border-dashed border-cantuaria-charcoal/10 flex flex-col items-center justify-center p-4 cursor-pointer hover:border-cantuaria-oxford/30 transition-colors group relative overflow-hidden shadow-inner">
                     <img v-if="editingItem.thumbnail_url" :src="editingItem.thumbnail_url" class="absolute inset-0 w-full h-full object-cover" />
                     <template v-else>
                       <LucideImage class="w-8 h-8 text-cantuaria-charcoal/20 group-hover:text-cantuaria-oxford transition-colors mb-2" />
                       <span class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 text-center">Subir Imagem</span>
                     </template>
-                    <div v-if="uploadingCover" class="absolute inset-0 bg-white/80 flex items-center justify-center">
-                      <LucideLoader2 class="w-6 h-6 animate-spin text-cantuaria-oxford" />
-                    </div>
+                    <div v-if="uploadingCover" class="absolute inset-0 bg-white/80 flex items-center justify-center"><LucideLoader2 class="w-6 h-6 animate-spin text-cantuaria-oxford" /></div>
                     <input ref="coverInput" type="file" class="hidden" @change="handleCoverUpload" accept="image/*" />
                   </div>
                 </div>
                 <div class="md:col-span-2 space-y-6">
                   <div class="space-y-2">
                     <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título Final</label>
-                    <input type="text" v-model="editingItem.title" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl" />
+                    <input type="text" v-model="editingItem.title" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent" />
                   </div>
-                  
                   <div class="space-y-2">
-                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Autor(es) (separados por vírgula)</label>
-                    <input type="text" v-model="editingItem.authors_list" placeholder="Ex: John Donne, Richard Hooker" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
+                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Autor(es)</label>
+                    <input type="text" v-model="editingItem.authors_list" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
                   </div>
-
                   <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                      <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano</label>
-                      <input type="number" v-model="editingItem.publication_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Idioma</label>
-                      <input type="text" v-model="editingItem.language" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
-                    </div>
+                    <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano</label><input type="number" v-model="editingItem.publication_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
+                    <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Idioma</label><input type="text" v-model="editingItem.language" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
                   </div>
-
-                  <div class="space-y-2">
-                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label>
-                    <input type="text" v-model="editingItem.category_name" placeholder="Ex: Liturgia" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
-                  </div>
+                  <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label><input type="text" v-model="editingItem.category_name" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
                 </div>
               </div>
-
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Resumo da Obra</label>
-                <textarea rows="6" v-model="editingItem.summary" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed"></textarea>
-              </div>
-
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tags (separadas por vírgula)</label>
-                <input type="text" v-model="editingItem.tags_list" placeholder="Ex: BCP, Reforma, 1662" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
-              </div>
-
+              <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Resumo</label><textarea rows="6" v-model="editingItem.summary" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed bg-cantuaria-cream/10"></textarea></div>
+              <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tags</label><input type="text" v-model="editingItem.tags_list" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
               <div class="pt-10 flex justify-end gap-4 border-t border-cantuaria-oxford/5">
-                <button @click="editingItem = null" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford">Cancelar</button>
-                <button 
-                  @click="publish" 
-                  :disabled="publishing"
-                  class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50"
-                >
-                  {{ publishing ? 'Salvando...' : 'Salvar & Publicar' }}
-                </button>
+                <button @click="editingItem = null" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
+                <button @click="publish" :disabled="publishing" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all">Salvar & Publicar</button>
               </div>
             </div>
           </div>
@@ -206,8 +282,20 @@ const analyzing = ref(false)
 const publishing = ref(false)
 const uploadingCover = ref(false)
 
+// Bulk selection state
+const selectedIds = ref<string[]>([])
+const allSelected = computed(() => items.value.length > 0 && selectedIds.value.length === items.value.length)
+
+// Batch analysis state
+const batchAnalysisActive = ref(false)
+const isAnalyzingBatch = ref(false)
+const publishingBatch = ref(false)
+const batchResults = ref<any[]>([])
+const completedCount = computed(() => batchResults.value.filter(r => r.status === 'complete').length)
+
 const fetchData = async () => {
   loading.value = true
+  selectedIds.value = []
   
   const { data } = await supabase
     .from('documents')
@@ -222,30 +310,142 @@ const fetchData = async () => {
     category_name: doc.categories?.name
   })) || []
 
-  // Atualiza contagem de pendentes
   const { count } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('status', 'pending')
   pendingCount.value = count || 0
   
   loading.value = false
 }
 
+const toggleAll = () => {
+  if (allSelected.value) {
+    selectedIds.value = []
+  } else {
+    selectedIds.value = items.value.map(i => i.id)
+  }
+}
+
 const openReview = (item: any) => {
   editingItem.value = JSON.parse(JSON.stringify(item))
+}
+
+// BATCH ANALYSIS LOGIC
+const startBatchAnalysis = async () => {
+  batchAnalysisActive.value = true
+  isAnalyzingBatch.value = true
+  
+  const selectedItems = items.value.filter(i => selectedIds.value.includes(i.id))
+  batchResults.value = selectedItems.map(i => ({
+    id: i.id,
+    originalTitle: i.title,
+    file_url: i.file_url,
+    type: i.type,
+    status: 'processing',
+    data: null,
+    errorMessage: null
+  }))
+
+  const promises = batchResults.value.map(async (res) => {
+    try {
+      const analysis: any = await $fetch('/api/analyze', {
+        method: 'POST',
+        body: { documentId: res.id, fileUrl: res.file_url, filename: res.originalTitle }
+      })
+      res.data = analysis
+      res.status = 'complete'
+    } catch (err: any) {
+      res.status = 'error'
+      res.errorMessage = err.message || 'Falha na IA'
+    }
+  })
+
+  await Promise.all(promises)
+  isAnalyzingBatch.value = false
+}
+
+const saveBatchResults = async () => {
+  publishingBatch.value = true
+  const toSave = batchResults.value.filter(r => r.status === 'complete')
+  
+  try {
+    for (const res of toSave) {
+      await publishItem(res.data, res.id)
+    }
+    closeBatch()
+    await fetchData()
+  } catch (err) {
+    alert('Erro ao salvar alguns itens.')
+  } finally {
+    publishingBatch.value = false
+  }
+}
+
+const closeBatch = () => {
+  batchAnalysisActive.value = false
+  batchResults.value = []
+  selectedIds.value = []
+}
+
+// Reusable Publish Logic
+const publishItem = async (data: any, id: string) => {
+  let categoryId = null
+  if (data.category_name) {
+    const slug = data.category_name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
+    const { data: cat } = await supabase.from('categories').upsert({ name: data.category_name, slug }, { onConflict: 'slug' }).select().single()
+    if (cat) categoryId = (cat as any).id
+  }
+
+  await supabase.from('documents').update({
+    title: data.title,
+    summary: data.summary,
+    publication_year: data.publication_year,
+    language: data.language,
+    thumbnail_url: data.thumbnail_url,
+    category_id: categoryId,
+    status: 'published'
+  }).eq('id', id)
+
+  if (data.authors_list) {
+    await supabase.from('document_authors').delete().eq('document_id', id)
+    const authors = data.authors_list.split(',').map((a: string) => a.trim())
+    for (const name of authors) {
+      const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
+      const { data: aut } = await supabase.from('authors').upsert({ name, slug }, { onConflict: 'slug' }).select().single()
+      if (aut) await supabase.from('document_authors').insert({ document_id: id, author_id: (aut as any).id })
+    }
+  }
+
+  if (data.tags_list) {
+    await supabase.from('document_tags').delete().eq('document_id', id)
+    const tags = data.tags_list.split(',').map((t: string) => t.trim())
+    for (const name of tags) {
+      const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
+      const { data: tagData } = await supabase.from('tags').upsert({ name, slug }, { onConflict: 'slug' }).select().single()
+      if (tagData) await supabase.from('document_tags').insert({ document_id: id, tag_id: (tagData as any).id })
+    }
+  }
+}
+
+const publish = async () => {
+  publishing.value = true
+  try {
+    await publishItem(editingItem.value, editingItem.value.id)
+    editingItem.value = null
+    await fetchData()
+  } finally {
+    publishing.value = false
+  }
 }
 
 const handleCoverUpload = async (e: any) => {
   const file = e.target.files[0]
   if (!file) return
   uploadingCover.value = true
-  
   try {
     const fileName = `covers/${Date.now()}-${file.name}`
     const { error } = await supabase.storage.from('covers').upload(fileName, file)
     if (error) throw error
     const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(fileName)
     editingItem.value.thumbnail_url = publicUrl
-  } catch (err) {
-    alert('Erro no upload da capa')
   } finally {
     uploadingCover.value = false
   }
@@ -256,103 +456,18 @@ const analyzeWithAI = async () => {
   try {
     const analysis: any = await $fetch('/api/analyze', {
       method: 'POST',
-      body: { 
-        documentId: editingItem.value.id,
-        fileUrl: editingItem.value.file_url,
-        filename: editingItem.value.title 
-      }
+      body: { documentId: editingItem.value.id, fileUrl: editingItem.value.file_url, filename: editingItem.value.title }
     })
     editingItem.value = { ...editingItem.value, ...analysis }
-  } catch (err) {
-    alert('Erro na IA')
   } finally {
     analyzing.value = false
   }
 }
 
-const publish = async () => {
-  publishing.value = true
-  try {
-    // 1. Categoria
-    let categoryId = null
-    if (editingItem.value.category_name) {
-      const slug = editingItem.value.category_name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
-      const { data: catData } = await supabase
-        .from('categories')
-        .upsert({ name: editingItem.value.category_name, slug }, { onConflict: 'slug' })
-        .select().single()
-      if (catData) categoryId = (catData as any).id
-    }
-
-    // 2. Documento
-    const { error: docError } = await supabase
-      .from('documents')
-      .update({
-        title: editingItem.value.title,
-        summary: editingItem.value.summary,
-        publication_year: editingItem.value.publication_year,
-        language: editingItem.value.language,
-        thumbnail_url: editingItem.value.thumbnail_url,
-        category_id: categoryId,
-        status: 'published'
-      })
-      .eq('id', editingItem.value.id)
-    
-    if (docError) throw docError
-
-    // 3. Autores (M-M)
-    if (editingItem.value.authors_list) {
-      // Remove vínculos antigos para evitar duplicatas ou órfãos se a lista mudou
-      await supabase.from('document_authors').delete().eq('document_id', editingItem.value.id)
-      
-      const authors = editingItem.value.authors_list.split(',').map((a: string) => a.trim())
-      for (const name of authors) {
-        const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
-        const { data: autData } = await supabase
-          .from('authors')
-          .upsert({ name, slug }, { onConflict: 'slug' })
-          .select()
-          .single()
-        
-        if (autData) {
-          await supabase.from('document_authors').insert({ document_id: editingItem.value.id, author_id: (autData as any).id })
-        }
-      }
-    }
-
-    // 4. Tags (M-M)
-    if (editingItem.value.tags_list) {
-      // Remove vínculos antigos
-      await supabase.from('document_tags').delete().eq('document_id', editingItem.value.id)
-      
-      const tags = editingItem.value.tags_list.split(',').map((t: string) => t.trim())
-      for (const name of tags) {
-        const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
-        const { data: tagData } = await supabase
-          .from('tags')
-          .upsert({ name, slug }, { onConflict: 'slug' })
-          .select()
-          .single()
-        
-        if (tagData) {
-          await supabase.from('document_tags').insert({ document_id: editingItem.value.id, tag_id: (tagData as any).id })
-        }
-      }
-    }
-
-    editingItem.value = null
-    await fetchData()
-  } catch (err) {
-    alert('Erro ao salvar')
-  } finally {
-    publishing.value = false
-  }
-}
-
 const deleteItem = async (item: any) => {
-  if (!confirm('Deseja remover esta obra permanentemente?')) return
-  const { error } = await supabase.from('documents').delete().eq('id', item.id)
-  if (!error) fetchData()
+  if (!confirm('Remover permanentemente?')) return
+  await supabase.from('documents').delete().eq('id', item.id)
+  await fetchData()
 }
 
 const logout = async () => {
@@ -363,3 +478,16 @@ const logout = async () => {
 watch(currentTab, fetchData)
 onMounted(fetchData)
 </script>
+
+<style scoped>
+.animate-progress-indefinite {
+  width: 100%;
+  animation: progress-indefinite 2s infinite linear;
+  transform-origin: 0% 50%;
+}
+@keyframes progress-indefinite {
+  0% { transform: translateX(0) scaleX(0); }
+  40% { transform: translateX(0) scaleX(0.4); }
+  100% { transform: translateX(100%) scaleX(0.5); }
+}
+</style>

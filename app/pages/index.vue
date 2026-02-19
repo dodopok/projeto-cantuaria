@@ -83,7 +83,10 @@
       <div class="container mx-auto px-6">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
           <div v-for="stat in stats" :key="stat.label">
-            <div class="text-4xl font-serif text-cantuaria-oxford mb-2">{{ stat.value }}</div>
+            <div class="text-4xl font-serif text-cantuaria-oxford mb-2">
+              <span v-if="stat.loading" class="animate-pulse opacity-20">---</span>
+              <span v-else>{{ stat.value }}</span>
+            </div>
             <div class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">{{ stat.label }}</div>
           </div>
         </div>
@@ -92,17 +95,40 @@
   </NuxtLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Search as LucideSearch, ArrowRight as LucideArrowRight, ArrowUpRight as LucideArrowUpRight } from 'lucide-vue-next'
 
+const supabase = useSupabaseClient()
 const searchQuery = ref('')
+
+const stats = ref([
+  { label: 'Obras Catalogadas', value: '0', loading: true },
+  { label: 'Autores', value: '0', loading: true },
+  { label: 'Categorias', value: '0', loading: true },
+  { label: 'Anos de História', value: '500+', loading: false }
+])
+
+const fetchStats = async () => {
+  const [docs, authors, cats] = await Promise.all([
+    supabase.from('documents').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+    supabase.from('authors').select('*', { count: 'exact', head: true }),
+    supabase.from('categories').select('*', { count: 'exact', head: true })
+  ])
+
+  stats.value[0].value = docs.count?.toString() || '0'
+  stats.value[0].loading = false
+  stats.value[1].value = authors.count?.toString() || '0'
+  stats.value[1].loading = false
+  stats.value[2].value = cats.count?.toString() || '0'
+  stats.value[2].loading = false
+}
 
 const handleSearch = () => {
   if (!searchQuery.value.trim()) return
   navigateTo(`/biblioteca?q=${encodeURIComponent(searchQuery.value)}`)
 }
 
-const quickSearch = (term) => {
+const quickSearch = (term: string) => {
   navigateTo(`/biblioteca?q=${encodeURIComponent(term)}`)
 }
 
@@ -130,12 +156,7 @@ const featuredCollections = [
   }
 ]
 
-const stats = [
-  { label: 'Obras Catalogadas', value: 'Em crescimento' },
-  { label: 'Autores', value: 'Acervo Histórico' },
-  { label: 'Anos de História', value: '500+' },
-  { label: 'Acessos', value: 'Público' }
-]
+onMounted(fetchStats)
 </script>
 
 <style scoped>

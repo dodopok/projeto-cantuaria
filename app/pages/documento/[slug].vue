@@ -123,7 +123,7 @@
   </NuxtLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { 
   Share2 as LucideShare2, 
   Download as LucideDownload, 
@@ -136,7 +136,7 @@ import {
 const route = useRoute()
 const supabase = useSupabaseClient()
 const showReader = ref(false)
-const document = ref(null)
+const document = ref<any>(null)
 const loading = ref(true)
 
 const fetchDocument = async () => {
@@ -147,7 +147,19 @@ const fetchDocument = async () => {
     .eq('slug', route.params.slug)
     .single()
   
-  if (!error) document.value = data
+  if (!error) {
+    document.value = data
+    
+    // SEO Dinâmico
+    useSeoMeta({
+      title: `${data.title} | Projeto Cantuária`,
+      ogTitle: `${data.title} | Projeto Cantuária`,
+      description: data.summary || 'Documento histórico do acervo digital anglicano.',
+      ogDescription: data.summary,
+      ogImage: data.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000',
+      twitterCard: 'summary_large_image',
+    })
+  }
   loading.value = false
 }
 
