@@ -53,6 +53,15 @@ import { User as LucideUser, Loader2 as LucideLoader2 } from 'lucide-vue-next'
 const authors = ref<any[]>([])
 const loading = ref(true)
 
+useSeoMeta({
+  title: 'Autores & Tradutores | Projeto Cantuária',
+  ogTitle: 'Autores & Tradutores | Projeto Cantuária',
+  description: 'Conheça os grandes nomes da teologia e liturgia anglicana cujas obras estão catalogadas em nosso acervo.',
+  ogDescription: 'Conheça os grandes nomes da teologia e liturgia anglicana cujas obras estão catalogadas em nosso acervo.',
+  ogImage: 'https://images.unsplash.com/photo-1455391230247-0c59109b75e6?q=80&w=2000',
+  twitterCard: 'summary_large_image'
+})
+
 const fetchAuthors = async () => {
   try {
     const data = await $fetch('/api/authors')

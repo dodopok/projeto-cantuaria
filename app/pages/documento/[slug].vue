@@ -170,8 +170,14 @@ const fetchDocument = async () => {
     document.value = data
     useSeoMeta({
       title: `${data.title} | Projeto Cantuária`,
-      description: data.summary || 'Documento histórico anglicano.',
-      ogImage: data.thumbnail_url
+      ogTitle: `${data.title} | Projeto Cantuária`,
+      description: data.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.',
+      ogDescription: data.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.',
+      ogImage: data.thumbnail_url,
+      twitterCard: 'summary_large_image',
+      twitterTitle: data.title,
+      twitterDescription: data.summary,
+      twitterImage: data.thumbnail_url
     })
   } catch (err) { console.error('Erro:', err) } finally { loading.value = false }
 }

@@ -133,6 +133,11 @@ const currentUploadIndex = ref(0)
 
 const topRef = ref<HTMLElement | null>(null)
 
+useSeoMeta({
+  title: 'Contribuir | Projeto Cantuária',
+  description: 'Envie documentos históricos, livros ou artigos para serem preservados em nossa biblioteca digital.'
+})
+
 // Função para calcular SHA-256 do arquivo (DNA do conteúdo)
 const calculateHash = async (file: File) => {
   const buffer = await file.arrayBuffer()

@@ -45,6 +45,15 @@ import { BookOpen as LucideBookOpen, Loader2 as LucideLoader2 } from 'lucide-vue
 const categories = ref<any[]>([])
 const loading = ref(true)
 
+useSeoMeta({
+  title: 'Categorias Temáticas | Projeto Cantuária',
+  ogTitle: 'Categorias Temáticas | Projeto Cantuária',
+  description: 'Navegue pelo nosso acervo através de categorias como Liturgia, História, Patrística e Teologia.',
+  ogDescription: 'Navegue pelo nosso acervo através de categorias como Liturgia, História, Patrística e Teologia.',
+  ogImage: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000',
+  twitterCard: 'summary_large_image'
+})
+
 const fetchCategories = async () => {
   try {
     const data = await $fetch('/api/categories')

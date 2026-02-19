@@ -67,6 +67,11 @@ const password = ref('')
 const error = ref(null)
 const loading = ref(false)
 
+useSeoMeta({
+  title: 'Acesso Restrito | Projeto Cantuária',
+  robots: 'noindex, nofollow'
+})
+
 // Se já estiver logado, manda pro admin
 onMounted(() => {
   watchEffect(() => {

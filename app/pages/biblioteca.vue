@@ -129,6 +129,15 @@ const page = ref(0)
 const pageSize = 9
 const hasMore = ref(true)
 
+useSeoMeta({
+  title: 'Biblioteca Digital | Projeto Cantuária',
+  ogTitle: 'Biblioteca Digital | Projeto Cantuária',
+  description: 'Explore nosso acervo completo de livros, artigos e documentos da tradição anglicana.',
+  ogDescription: 'Explore nosso acervo completo de livros, artigos e documentos da tradição anglicana.',
+  ogImage: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000',
+  twitterCard: 'summary_large_image'
+})
+
 const fetchCategories = async () => {
   try {
     categories.value = await $fetch('/api/categories') as any[]
