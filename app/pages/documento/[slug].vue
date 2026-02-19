@@ -35,9 +35,20 @@
           
           <!-- Document Cover & Quick Stats -->
           <div class="lg:col-span-4 space-y-12">
-            <div class="relative group shadow-2xl border border-cantuaria-charcoal/5">
-              <img :src="document.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'" :alt="document.title" class="w-full aspect-[3/4.5] object-cover" />
+            <div 
+              @click="showReader = true"
+              class="relative group shadow-2xl border border-cantuaria-charcoal/5 cursor-pointer overflow-hidden"
+            >
+              <img :src="document.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'" :alt="document.title" class="w-full aspect-[3/4.5] object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div class="absolute inset-0 bg-cantuaria-oxford/0 group-hover:bg-cantuaria-oxford/10 transition-colors duration-500"></div>
               <div class="absolute inset-0 ring-1 ring-inset ring-black/5"></div>
+              
+              <!-- Hover Overlay Hint -->
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-cantuaria-oxford/20 backdrop-blur-[2px]">
+                <div class="bg-white/90 px-6 py-3 rounded-sm shadow-xl">
+                  <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-oxford">Clique para Ler</span>
+                </div>
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-8 pt-8 border-t border-cantuaria-oxford/10">
