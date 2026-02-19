@@ -20,7 +20,7 @@
         <div class="space-y-2">
           <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">E-mail</label>
           <input 
-            v-model="email" 
+            v-model="email"
             type="email" 
             required 
             class="w-full border-b border-cantuaria-charcoal/10 py-3 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm bg-transparent transition-colors"
