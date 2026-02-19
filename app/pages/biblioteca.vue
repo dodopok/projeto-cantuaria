@@ -26,17 +26,19 @@
                 v-model="searchQuery"
                 type="text" 
                 placeholder="Título, autor..." 
+                @keyup.enter="handleSearch"
                 class="w-full pl-10 pr-4 py-2 bg-cantuaria-cream/30 border border-cantuaria-charcoal/10 text-xs focus:outline-none focus:border-cantuaria-oxford"
               />
               <LucideSearch class="w-4 h-4 absolute left-3 top-2.5 text-cantuaria-charcoal/30" />
             </div>
+            <button @click="handleSearch" class="w-full mt-4 py-2 bg-cantuaria-oxford text-white text-[10px] uppercase font-bold tracking-widest hover:bg-cantuaria-oxford/90">Filtrar</button>
           </div>
 
           <div>
             <h3 class="font-serif text-lg text-cantuaria-oxford mb-6 border-b border-cantuaria-oxford/10 pb-2">Tipo de Obra</h3>
             <div class="space-y-3">
               <label v-for="type in ['Livro', 'Artigo', 'LOC', 'Documento']" :key="type" class="flex items-center gap-3 cursor-pointer group">
-                <input type="checkbox" :value="type" v-model="filterTypes" class="w-4 h-4 border-cantuaria-charcoal/20 text-cantuaria-oxford focus:ring-cantuaria-oxford" />
+                <input type="checkbox" :value="type" v-model="filterTypes" @change="handleSearch" class="w-4 h-4 border-cantuaria-charcoal/20 text-cantuaria-oxford focus:ring-cantuaria-oxford" />
                 <span class="text-sm text-cantuaria-charcoal/60 group-hover:text-cantuaria-oxford transition-colors uppercase tracking-widest text-[10px] font-bold">{{ type }}</span>
               </label>
             </div>
@@ -45,19 +47,34 @@
 
         <!-- Document Grid -->
         <div class="flex-grow">
-          <div v-if="loading" class="py-20 text-center">
+          <div v-if="loading && documents.length === 0" class="py-20 text-center">
             <LucideLoader2 class="w-10 h-10 animate-spin mx-auto text-cantuaria-oxford/20" />
           </div>
 
-          <div v-else-if="filteredDocuments.length === 0" class="py-20 text-center bg-white border border-cantuaria-charcoal/5">
+          <div v-else-if="documents.length === 0" class="py-20 text-center bg-white border border-cantuaria-charcoal/5">
             <LucideBookX class="w-12 h-12 mx-auto mb-4 text-cantuaria-charcoal/10" />
-            <p class="font-serif text-xl text-cantuaria-charcoal/40">Nenhuma obra encontrada para estes filtros.</p>
+            <p class="font-serif text-xl text-cantuaria-charcoal/40">Nenhuma obra encontrada.</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10">
-            <NuxtLink v-for="doc in filteredDocuments" :key="doc.id" :to="`/documento/${doc.slug}`">
-              <DocumentCard :document="formatDoc(doc)" />
-            </NuxtLink>
+          <div v-else class="space-y-12">
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10">
+              <NuxtLink v-for="doc in documents" :key="doc.id" :to="`/documento/${doc.slug}`">
+                <DocumentCard :document="formatDoc(doc)" />
+              </NuxtLink>
+            </div>
+
+            <!-- Load More -->
+            <div class="flex justify-center pt-12 border-t border-cantuaria-oxford/5">
+              <button 
+                v-if="hasMore" 
+                @click="loadMore" 
+                :disabled="loading"
+                class="px-12 py-4 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50"
+              >
+                {{ loading ? 'Carregando...' : 'Carregar mais obras' }}
+              </button>
+              <p v-else class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/20 italic">Fim do acervo disponível</p>
+            </div>
           </div>
         </div>
       </div>
@@ -65,44 +82,77 @@
   </NuxtLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { 
   Search as LucideSearch, 
   Loader2 as LucideLoader2,
   BookX as LucideBookX
 } from 'lucide-vue-next'
 
-const supabase = useSupabaseClient()
-const documents = ref([])
-const loading = ref(true)
-const searchQuery = ref('')
-const filterTypes = ref([])
+const route = useRoute()
 
-const fetchDocuments = async () => {
+const documents = ref<any[]>([])
+const loading = ref(true)
+const searchQuery = ref(route.query.q?.toString() || '')
+const filterTypes = ref<string[]>(route.query.tipo ? [route.query.tipo.toString()] : [])
+const page = ref(0)
+const pageSize = 9
+const hasMore = ref(true)
+
+const fetchDocuments = async (append = false) => {
   loading.value = true
-  const { data, error } = await supabase
-    .from('documents')
-    .select('*, authors(*)')
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })
   
-  if (!error) documents.value = data
-  loading.value = false
+  try {
+    const data: any = await $fetch('/api/documents', {
+      params: {
+        page: page.value,
+        pageSize,
+        q: searchQuery.value,
+        tipo: filterTypes.value[0] || ''
+      }
+    })
+
+    if (append) {
+      documents.value = [...documents.value, ...data.documents]
+    } else {
+      documents.value = data.documents
+    }
+    hasMore.value = data.hasMore
+  } catch (error) {
+    console.error('Erro ao buscar documentos:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
-const filteredDocuments = computed(() => {
-  return documents.value.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesType = filterTypes.value.length === 0 || filterTypes.value.includes(doc.type)
-    return matchesSearch && matchesType
-  })
-})
+const handleSearch = () => {
+  page.value = 0
+  fetchDocuments(false)
+  const query: any = {}
+  if (searchQuery.value) query.q = searchQuery.value
+  if (filterTypes.value.length > 0) query.tipo = filterTypes.value[0]
+  useRouter().push({ query })
+}
 
-const formatDoc = (doc) => ({
+const loadMore = () => {
+  page.value++
+  fetchDocuments(true)
+}
+
+const formatDoc = (doc: any) => ({
   ...doc,
   authors: doc.authors || [{ name: 'Autor Desconhecido' }],
   thumbnail_url: doc.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'
 })
 
-onMounted(fetchDocuments)
+onMounted(() => {
+  fetchDocuments()
+})
+
+watch(() => route.query.q, (newQ) => {
+  if (newQ !== searchQuery.value) {
+    searchQuery.value = newQ?.toString() || ''
+    handleSearch()
+  }
+})
 </script>

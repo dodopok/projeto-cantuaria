@@ -97,7 +97,7 @@
                 <div class="md:col-span-1">
                   <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 block mb-4">Capa da Obra</label>
                   <div 
-                    @click="$refs.coverInput.click()"
+                    @click="($refs.coverInput as HTMLInputElement).click()"
                     class="aspect-[3/4.5] bg-cantuaria-cream/50 border-2 border-dashed border-cantuaria-charcoal/10 flex flex-col items-center justify-center p-4 cursor-pointer hover:border-cantuaria-oxford/30 transition-colors group relative overflow-hidden shadow-inner"
                   >
                     <img v-if="editingItem.thumbnail_url" :src="editingItem.thumbnail_url" class="absolute inset-0 w-full h-full object-cover" />
@@ -168,7 +168,7 @@
   </NuxtLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { 
   ShieldCheck as LucideShieldCheck, FileText as LucideFileText, 
   Sparkles as LucideSparkles, X as LucideX, Image as LucideImage,
@@ -179,8 +179,8 @@ definePageMeta({ middleware: 'admin' })
 
 const supabase = useSupabaseClient()
 const loading = ref(true)
-const pendingItems = ref([])
-const editingItem = ref(null)
+const pendingItems = ref<any[]>([])
+const editingItem = ref<any>(null)
 const analyzing = ref(false)
 const publishing = ref(false)
 const uploadingCover = ref(false)
@@ -192,11 +192,11 @@ const fetchPending = async () => {
   loading.value = false
 }
 
-const openReview = (item) => {
+const openReview = (item: any) => {
   editingItem.value = JSON.parse(JSON.stringify(item)) // Deep copy
 }
 
-const handleCoverUpload = async (e) => {
+const handleCoverUpload = async (e: any) => {
   const file = e.target.files[0]
   if (!file) return
   uploadingCover.value = true
@@ -238,7 +238,20 @@ const analyzeWithAI = async () => {
 const publish = async () => {
   publishing.value = true
   try {
-    const { error } = await supabase
+    // 1. Lidar com a Categoria
+    let categoryId = null
+    if (editingItem.value.category_name) {
+      const slug = editingItem.value.category_name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
+      const { data: catData } = await supabase
+        .from('categories')
+        .upsert({ name: editingItem.value.category_name, slug }, { onConflict: 'slug' })
+        .select()
+        .single()
+      if (catData) categoryId = (catData as any).id
+    }
+
+    // 2. Atualizar o Documento
+    const { error: docError } = await supabase
       .from('documents')
       .update({
         title: editingItem.value.title,
@@ -246,14 +259,51 @@ const publish = async () => {
         publication_year: editingItem.value.publication_year,
         language: editingItem.value.language,
         thumbnail_url: editingItem.value.thumbnail_url,
+        category_id: categoryId,
         status: 'published'
       })
       .eq('id', editingItem.value.id)
     
-    if (error) throw error
+    if (docError) throw docError
+
+    // 3. Lidar com Autores (M-M)
+    if (editingItem.value.authors_list) {
+      const authors = editingItem.value.authors_list.split(',').map((a: string) => a.trim())
+      for (const name of authors) {
+        const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
+        const { data: autData } = await supabase
+          .from('authors')
+          .upsert({ name, slug }, { onConflict: 'slug' })
+          .select()
+          .single()
+        
+        if (autData) {
+          await supabase.from('document_authors').upsert({ document_id: editingItem.value.id, author_id: (autData as any).id })
+        }
+      }
+    }
+
+    // 4. Lidar com Tags (M-M)
+    if (editingItem.value.tags_list) {
+      const tags = editingItem.value.tags_list.split(',').map((t: string) => t.trim())
+      for (const name of tags) {
+        const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
+        const { data: tagData } = await supabase
+          .from('tags')
+          .upsert({ name, slug }, { onConflict: 'slug' })
+          .select()
+          .single()
+        
+        if (tagData) {
+          await supabase.from('document_tags').upsert({ document_id: editingItem.value.id, tag_id: (tagData as any).id })
+        }
+      }
+    }
+
     editingItem.value = null
     await fetchPending()
   } catch (err) {
+    console.error(err)
     alert('Erro ao publicar')
   } finally {
     publishing.value = false

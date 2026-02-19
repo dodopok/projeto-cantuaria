@@ -9,7 +9,7 @@
       <div class="container mx-auto px-6 relative z-10 text-center">
         <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-cantuaria-oxford/5 border border-cantuaria-oxford/10 mb-8 animate-fade-in">
           <span class="w-1.5 h-1.5 rounded-full bg-cantuaria-gold animate-pulse"></span>
-          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-oxford/70">Novo no Acervo: Livro de Oração Comum (1662)</span>
+          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-oxford/70">O acervo digital da memória anglicana</span>
         </div>
         
         <h1 class="text-5xl md:text-7xl lg:text-8xl font-serif text-cantuaria-oxford mb-8 leading-tight tracking-tight">
@@ -22,27 +22,28 @@
         </p>
 
         <!-- Search Bar -->
-        <div class="max-w-3xl mx-auto relative group">
+        <form @submit.prevent="handleSearch" class="max-w-3xl mx-auto relative group">
           <div class="absolute inset-0 bg-cantuaria-oxford/5 blur-2xl group-hover:bg-cantuaria-oxford/10 transition-all"></div>
           <div class="relative bg-white border border-cantuaria-charcoal/10 p-2 flex items-center shadow-xl group-focus-within:border-cantuaria-oxford transition-all">
             <LucideSearch class="w-6 h-6 ml-4 text-cantuaria-charcoal/40" />
             <input 
+              v-model="searchQuery"
               type="text" 
               placeholder="Pesquise por títulos, autores, séculos ou temas..." 
               class="w-full px-4 py-4 focus:outline-none text-lg font-sans placeholder:text-cantuaria-charcoal/30 bg-transparent"
             />
-            <button class="btn-primary py-4 px-8 flex items-center gap-2 group/btn">
+            <button type="submit" class="btn-primary py-4 px-8 flex items-center gap-2 group/btn">
               <span>Explorar</span>
               <LucideArrowRight class="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
             </button>
           </div>
           <div class="mt-4 flex flex-wrap justify-center gap-4 text-sm text-cantuaria-charcoal/40 uppercase tracking-widest font-bold">
-            <span class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Liturgia</span>
-            <span class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Teologia</span>
-            <span class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#História</span>
-            <span class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Patrística</span>
+            <span @click="quickSearch('Liturgia')" class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Liturgia</span>
+            <span @click="quickSearch('Teologia')" class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Teologia</span>
+            <span @click="quickSearch('História')" class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#História</span>
+            <span @click="quickSearch('Patrística')" class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Patrística</span>
           </div>
-        </div>
+        </form>
       </div>
     </section>
 
@@ -63,7 +64,7 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div v-for="collection in collections" :key="collection.id" class="group cursor-pointer">
+          <NuxtLink v-for="collection in featuredCollections" :key="collection.id" :to="`/biblioteca?tipo=${collection.type}`" class="group cursor-pointer">
             <div class="relative aspect-[3/4] overflow-hidden mb-6 bg-cantuaria-charcoal">
               <img :src="collection.image" :alt="collection.title" class="w-full h-full object-cover opacity-80 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-cantuaria-charcoal/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
@@ -72,7 +73,7 @@
                 <h3 class="text-2xl font-serif tracking-tight leading-tight">{{ collection.title }}</h3>
               </div>
             </div>
-          </div>
+          </NuxtLink>
         </div>
       </div>
     </section>
@@ -94,34 +95,58 @@
 <script setup>
 import { Search as LucideSearch, ArrowRight as LucideArrowRight, ArrowUpRight as LucideArrowUpRight } from 'lucide-vue-next'
 
-const collections = [
+const searchQuery = ref('')
+
+const handleSearch = () => {
+  if (!searchQuery.value.trim()) return
+  navigateTo(`/biblioteca?q=${encodeURIComponent(searchQuery.value)}`)
+}
+
+const quickSearch = (term) => {
+  navigateTo(`/biblioteca?q=${encodeURIComponent(term)}`)
+}
+
+const featuredCollections = [
   {
     id: 1,
     title: 'Livros de Oração Comum',
     category: 'Liturgia',
+    type: 'LOC',
     image: 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'
   },
   {
     id: 2,
-    title: 'Sermões de John Donne',
+    title: 'Sermões Clássicos',
     category: 'Sermonários',
+    type: 'Artigo',
     image: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1000'
   },
   {
     id: 3,
-    title: 'A Reforma na Inglaterra',
+    title: 'História Anglicana',
     category: 'História',
+    type: 'Documento',
     image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=1000'
   }
 ]
 
 const stats = [
-  { label: 'Obras Catalogadas', value: '1,200+' },
-  { label: 'Autores', value: '450' },
+  { label: 'Obras Catalogadas', value: 'Em crescimento' },
+  { label: 'Autores', value: 'Acervo Histórico' },
   { label: 'Anos de História', value: '500+' },
-  { label: 'Acessos Mensais', value: '15k' }
+  { label: 'Acessos', value: 'Público' }
 ]
 </script>
+
+<style scoped>
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 1s ease-out forwards;
+}
+</style>
 
 <style scoped>
 @keyframes fade-in {
