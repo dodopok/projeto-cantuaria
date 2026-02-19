@@ -14,32 +14,36 @@
             <div class="flex gap-4">
               <div class="bg-white/10 px-6 py-3 border border-white/10 text-center min-w-[120px]">
                 <span class="block text-[10px] uppercase tracking-widest font-bold opacity-60 mb-1">Pendentes</span>
-                <span class="text-2xl font-serif text-cantuaria-gold">12</span>
+                <span class="text-2xl font-serif text-cantuaria-gold">{{ pendingItems.length }}</span>
               </div>
-              <div class="bg-white/10 px-6 py-3 border border-white/10 text-center min-w-[120px]">
-                <span class="block text-[10px] uppercase tracking-widest font-bold opacity-60 mb-1">Aprovados</span>
-                <span class="text-2xl font-serif">1.2k</span>
-              </div>
+              <button @click="logout" class="px-6 py-3 border border-white/20 hover:bg-white/10 transition-colors text-[10px] uppercase tracking-widest font-bold">
+                Sair
+              </button>
             </div>
           </div>
         </div>
       </header>
 
       <section class="container mx-auto px-6 py-12">
-        <div class="bg-white border border-cantuaria-charcoal/5 shadow-sm overflow-hidden">
+        <div v-if="loading" class="py-20 text-center">
+          <LucideLoader2 class="w-10 h-10 animate-spin mx-auto text-cantuaria-oxford/20" />
+        </div>
+
+        <div v-else-if="pendingItems.length === 0" class="bg-white border border-cantuaria-charcoal/5 p-20 text-center shadow-sm">
+          <LucideCheckCircle class="w-12 h-12 mx-auto mb-4 text-cantuaria-gold/30" />
+          <p class="font-serif text-xl text-cantuaria-oxford/50">Tudo em ordem. Nenhum documento pendente para revisão.</p>
+        </div>
+
+        <div v-else class="bg-white border border-cantuaria-charcoal/5 shadow-sm overflow-hidden">
           <div class="p-6 border-b border-cantuaria-charcoal/5 flex justify-between items-center">
             <h2 class="font-serif text-2xl text-cantuaria-oxford">Documentos para Revisão</h2>
-            <div class="flex gap-3">
-              <input type="text" placeholder="Filtrar pendentes..." class="px-4 py-2 border border-cantuaria-charcoal/10 text-xs font-sans focus:outline-none focus:border-cantuaria-oxford" />
-            </div>
           </div>
 
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-cantuaria-cream/50 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 border-b border-cantuaria-charcoal/5">
-                <th class="px-6 py-4">Arquivo / Título Provisório</th>
+                <th class="px-6 py-4">Título Provisório / Tipo</th>
                 <th class="px-6 py-4">Enviado em</th>
-                <th class="px-6 py-4">Status</th>
                 <th class="px-6 py-4 text-right">Ações</th>
               </tr>
             </thead>
@@ -51,27 +55,26 @@
                       <LucideFileText class="w-5 h-5" />
                     </div>
                     <div>
-                      <div class="font-medium text-cantuaria-oxford">{{ item.filename }}</div>
-                      <div class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">{{ item.size }}</div>
+                      <div class="font-medium text-cantuaria-oxford">{{ item.title }}</div>
+                      <div class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">{{ item.type }}</div>
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-6 text-sm text-cantuaria-charcoal/60">{{ item.date }}</td>
-                <td class="px-6 py-6">
-                  <span class="px-2 py-0.5 bg-cantuaria-gold/10 text-cantuaria-gold text-[8px] uppercase tracking-widest font-bold rounded-full">Pendente</span>
+                <td class="px-6 py-6 text-sm text-cantuaria-charcoal/60">
+                  {{ new Date(item.created_at).toLocaleDateString('pt-BR') }}
                 </td>
                 <td class="px-6 py-6 text-right">
-                  <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="flex justify-end gap-3">
                     <button 
                       @click="analyzeWithAI(item)" 
                       :disabled="analyzing === item.id"
-                      class="flex items-center gap-2 px-3 py-1.5 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford/90 disabled:opacity-50"
+                      class="flex items-center gap-2 px-4 py-2 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford/90 disabled:opacity-50 transition-all"
                     >
-                      <LucideSparkles class="w-3.5 h-3.5" :class="{ 'animate-pulse': analyzing === item.id }" />
+                      <LucideSparkles class="w-3.5 h-3.5" :class="{ 'animate-spin': analyzing === item.id }" />
                       {{ analyzing === item.id ? 'Analisando...' : 'Analisar com IA' }}
                     </button>
-                    <button class="px-3 py-1.5 border border-cantuaria-charcoal/10 text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-crimson hover:text-white hover:border-cantuaria-crimson transition-colors">
-                      Descartar
+                    <button @click="deleteItem(item)" class="p-2 text-cantuaria-charcoal/20 hover:text-cantuaria-crimson transition-colors">
+                      <LucideTrash2 class="w-4 h-4" />
                     </button>
                   </div>
                 </td>
@@ -81,13 +84,13 @@
         </div>
       </section>
 
-      <!-- AI Results Modal (Simulado) -->
+      <!-- AI Results Modal -->
       <div v-if="aiResult" class="fixed inset-0 z-[100] bg-cantuaria-oxford/90 backdrop-blur-md flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-4xl max-h-[90vh] overflow-auto shadow-2xl relative">
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] overflow-auto shadow-2xl relative animate-fade-in">
           <header class="p-8 border-b border-cantuaria-charcoal/5 sticky top-0 bg-white z-10 flex justify-between items-center">
             <div>
               <h3 class="font-serif text-3xl text-cantuaria-oxford mb-2">Sugestão da IA</h3>
-              <p class="text-xs text-cantuaria-charcoal/40 uppercase tracking-widest font-bold">Confirme os dados extraídos pelo Perplexity</p>
+              <p class="text-xs text-cantuaria-charcoal/40 uppercase tracking-widest font-bold">Revise e publique o documento no acervo</p>
             </div>
             <button @click="aiResult = null" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full">
               <LucideX class="w-6 h-6" />
@@ -97,21 +100,16 @@
           <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
             <div class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título Sugerido</label>
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título Final</label>
                 <input type="text" v-model="aiResult.title" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl" />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Autores</label>
-                <input type="text" :value="aiResult.authors?.join(', ')" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm" />
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano de Publicação</label>
+                <input type="number" v-model="aiResult.publication_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm" />
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label>
-                <select v-model="aiResult.category" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm bg-transparent">
-                  <option>Liturgia</option>
-                  <option>Teologia</option>
-                  <option>História</option>
-                  <option>Sermões</option>
-                </select>
+                <input type="text" v-model="aiResult.category" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm" />
               </div>
             </div>
 
@@ -121,20 +119,20 @@
                 <textarea rows="6" v-model="aiResult.summary" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed"></textarea>
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tags Sugeridas</label>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="tag in aiResult.tags" :key="tag" class="px-3 py-1 bg-cantuaria-oxford/5 text-[10px] uppercase tracking-widest font-bold text-cantuaria-oxford">
-                    {{ tag }}
-                  </span>
-                </div>
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tags Sugeridas (Separadas por vírgula)</label>
+                <input type="text" :value="aiResult.tags?.join(', ')" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm" />
               </div>
             </div>
           </div>
 
           <footer class="p-8 border-t border-cantuaria-charcoal/5 bg-cantuaria-cream/30 flex justify-end gap-4">
             <button @click="aiResult = null" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
-            <button class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl transition-all">
-              Aprovar & Publicar
+            <button 
+              @click="publishDocument" 
+              :disabled="publishing"
+              class="px-12 py-3 bg-cantuaria- gold bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl transition-all disabled:opacity-50"
+            >
+              {{ publishing ? 'Publicando...' : 'Aprovar & Publicar' }}
             </button>
           </footer>
         </div>
@@ -148,6 +146,9 @@ import {
   ShieldCheck as LucideShieldCheck, 
   FileText as LucideFileText, 
   Sparkles as LucideSparkles,
+  Trash2 as LucideTrash2,
+  Loader2 as LucideLoader2,
+  CheckCircle as LucideCheckCircle,
   X as LucideX 
 } from 'lucide-vue-next'
 
@@ -155,34 +156,85 @@ definePageMeta({
   middleware: 'admin'
 })
 
+const supabase = useSupabaseClient()
+const loading = ref(true)
+const publishing = ref(false)
 const analyzing = ref(null)
+const pendingItems = ref([])
 const aiResult = ref(null)
+const currentItem = ref(null)
 
-const pendingItems = ref([
-  { id: 1, filename: 'reforma-anglicana-sec-xvi.pdf', size: '2.4 MB', date: 'Hoje, 14:20' },
-  { id: 2, filename: 'common_prayer_1549.epub', size: '1.1 MB', date: 'Ontem, 09:15' },
-  { id: 3, filename: 'artigo_hooker_polity.docx', size: '850 KB', date: '18 Fev 2026' }
-])
+const fetchPending = async () => {
+  loading.value = true
+  const { data, error } = await supabase
+    .from('documents')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+  
+  if (!error) pendingItems.value = data
+  loading.value = false
+}
 
 const analyzeWithAI = async (item) => {
   analyzing.value = item.id
+  currentItem.value = item
   
   try {
-    // Simulação de chamada para o endpoint /api/analyze
-    // Na vida real, você passaria o conteúdo extraído do arquivo
     const response = await $fetch('/api/analyze', {
       method: 'POST',
       body: {
-        filename: item.filename,
-        documentText: "Este é um texto simulado do documento " + item.filename
+        filename: item.title,
+        documentId: item.id,
+        documentText: `Documento tipo ${item.type} publicado em ${item.publication_year || 'desconhecido'}. URL: ${item.file_url}`
       }
     })
     
     aiResult.value = response
   } catch (error) {
-    alert('Erro ao analisar com IA. Verifique se a API Key do Perplexity está configurada no .env')
+    alert('Erro na análise por IA. Verifique as chaves no .env')
   } finally {
     analyzing.value = null
   }
 }
+
+const publishDocument = async () => {
+  if (!currentItem.value || !aiResult.value) return
+  publishing.value = true
+
+  try {
+    const { error } = await supabase
+      .from('documents')
+      .update({
+        title: aiResult.value.title,
+        summary: aiResult.value.summary,
+        publication_year: aiResult.value.publication_year,
+        language: aiResult.value.language,
+        status: 'published'
+      })
+      .eq('id', currentItem.value.id)
+
+    if (error) throw error
+    
+    aiResult.value = null
+    await fetchPending()
+  } catch (err) {
+    alert('Erro ao publicar documento.')
+  } finally {
+    publishing.value = false
+  }
+}
+
+const deleteItem = async (item) => {
+  if (!confirm('Tem certeza que deseja descartar este envio?')) return
+  const { error } = await supabase.from('documents').delete().eq('id', item.id)
+  if (!error) fetchPending()
+}
+
+const logout = async () => {
+  await supabase.auth.signOut()
+  navigateTo('/login')
+}
+
+onMounted(fetchPending)
 </script>

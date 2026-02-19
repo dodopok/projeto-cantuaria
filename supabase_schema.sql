@@ -70,13 +70,21 @@ CREATE INDEX idx_documents_search ON documents USING GIN (search_vector);
 CREATE INDEX idx_documents_category ON documents(category_id);
 CREATE INDEX idx_documents_status ON documents(status);
 
--- RLS (Row Level Security) - Permitir leitura pública para publicados
+-- RLS (Row Level Security)
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+-- 1. Qualquer um pode ler documentos PUBLICADOS
+DROP POLICY IF EXISTS "Public can read published documents" ON documents;
 CREATE POLICY "Public can read published documents" ON documents
   FOR SELECT USING (status = 'published');
 
-ALTER TABLE authors ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public can read authors" ON authors FOR SELECT USING (true);
+-- 2. Qualquer um pode ENVIAR novas sugestões (Contribuir)
+-- Mas só podem inserir com status 'pending'
+DROP POLICY IF EXISTS "Public can insert suggestions" ON documents;
+CREATE POLICY "Public can insert suggestions" ON documents
+  FOR INSERT WITH CHECK (status = 'pending');
 
-ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public can read categories" ON categories FOR SELECT USING (true);
+-- 3. Curadores autenticados têm acesso total
+DROP POLICY IF EXISTS "Admin full access" ON documents;
+CREATE POLICY "Admin full access" ON documents
+  FOR ALL USING (auth.role() = 'authenticated');

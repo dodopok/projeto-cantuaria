@@ -1,45 +1,35 @@
--- [ANTERIOR] Tabela de Autores, Categorias, etc... (Mantido)
+-- [STORAGE CONFIG] - Atualizado para permitir contribuições públicas
 
--- CONFIGURAÇÃO DE STORAGE (Executar no painel SQL do Supabase)
+-- 1. Permitir que QUALQUER UM envie arquivos para o bucket 'documents'
+-- Isso é necessário para o portal de contribuição pública.
+-- Filtramos pelo bucket_id para manter o bucket 'covers' privado apenas para o admin.
 
--- 1. Criar Buckets
--- Nota: Buckets geralmente são criados via dashboard ou API, 
--- mas aqui definimos as permissões.
+DROP POLICY IF EXISTS "Admin Upload" ON storage.objects;
 
--- Inserir buckets se não existirem
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('documents', 'documents', true)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('covers', 'covers', true)
-ON CONFLICT (id) DO NOTHING;
-
--- 2. Políticas de Segurança para Storage
-
--- Permitir leitura pública para todos os arquivos (já que a biblioteca é pública)
-CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id IN ('documents', 'covers') );
-
--- Permitir Upload/Update/Delete apenas para usuários autenticados (Admins)
-CREATE POLICY "Admin Upload" ON storage.objects FOR INSERT WITH CHECK (
-  bucket_id IN ('documents', 'covers') AND auth.role() = 'authenticated'
+CREATE POLICY "Public Upload" ON storage.objects FOR INSERT WITH CHECK (
+  bucket_id = 'documents'
 );
 
+-- 2. Manter leitura pública (necessário para o leitor de PDF funcionar)
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (
+  bucket_id IN ('documents', 'covers')
+);
+
+-- 3. Edição e Deletar continuam restritos ao Admin logado
+DROP POLICY IF EXISTS "Admin Update" ON storage.objects;
 CREATE POLICY "Admin Update" ON storage.objects FOR UPDATE USING (
-  bucket_id IN ('documents', 'covers') AND auth.role() = 'authenticated'
+  auth.role() = 'authenticated'
 );
 
+DROP POLICY IF EXISTS "Admin Delete" ON storage.objects;
 CREATE POLICY "Admin Delete" ON storage.objects FOR DELETE USING (
-  bucket_id IN ('documents', 'covers') AND auth.role() = 'authenticated'
+  auth.role() = 'authenticated'
 );
 
--- ADICIONAL: Tabela de Configurações Globais (opcional)
-CREATE TABLE site_settings (
-  key TEXT PRIMARY KEY,
-  value JSONB,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- [TABELA DOCUMENTS] - Também precisamos de política para o INSERT público no banco
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
--- RLS para site_settings
-ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public can read settings" ON site_settings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public can insert suggestions" ON documents;
+CREATE POLICY "Public can insert suggestions" ON documents
+  FOR INSERT WITH CHECK (status = 'pending');
