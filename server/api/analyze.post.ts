@@ -1,56 +1,65 @@
-import { defineEventHandler, readBody } from 'h3'
+import { defineEventHandler, readBody, createError } from 'h3'
+import pdf from 'pdf-parse'
 
 export default defineEventHandler(async (event) => {
-  const { documentText, filename, documentId } = await readBody(event)
+  const body = await readBody(event)
+  const { filename, documentId, fileUrl } = body
   const config = useRuntimeConfig()
   
-  // No Nuxt 3 server side, usamos runtimeConfig ou process.env
   const PERPLEXITY_API_KEY = config.perplexityApiKey || process.env.PERPLEXITY_API_KEY
 
   if (!PERPLEXITY_API_KEY) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Perplexity API Key not configured'
-    })
+    throw createError({ statusCode: 500, statusMessage: 'API Key ausente' })
   }
 
-  const prompt = `
-    Analise o seguinte conteúdo de um documento para a biblioteca "Projeto Cantuária" (uma biblioteca digital anglicana).
-    Extraia os seguintes metadados em formato JSON puro:
-    - title: Título da obra
-    - authors: Lista de autores (apenas nomes)
-    - category: Categoria (ex: Liturgia, Teologia, História, Sermões)
-    - tags: Lista de tags relevantes (ex: BCP, Reforma, Patrística)
-    - summary: Um resumo de 2-3 parágrafos sobre a importância da obra
-    - publication_year: Ano ou século provável de publicação
-    - language: Idioma principal
-
-    Nome do arquivo: ${filename}
-    Conteúdo (primeiros 3000 caracteres): ${documentText?.substring(0, 3000)}
-  `
+  let extractedText = ''
 
   try {
-    const aiResponse = await $fetch('https://api.perplexity.ai/chat/completions', {
+    // 1. Baixar o arquivo se for PDF
+    if (fileUrl && fileUrl.toLowerCase().endsWith('.pdf')) {
+      const fileBuffer = await $fetch<ArrayBuffer>(fileUrl)
+      const data = await pdf(Buffer.from(fileBuffer))
+      extractedText = data.text
+    } else {
+      extractedText = body.documentText || ''
+    }
+
+    const prompt = `
+      Analise o conteúdo deste documento para a biblioteca "Projeto Cantuária".
+      Extraia os metadados em JSON:
+      {
+        "title": "Título",
+        "authors": ["Autor"],
+        "category": "Categoria única",
+        "tags": ["Tag1"],
+        "summary": "Resumo de 2 parágrafos",
+        "publication_year": 1662,
+        "language": "Português"
+      }
+      
+      Conteúdo extraído: ${extractedText.substring(0, 5000)}
+    `
+
+    const aiResponse: any = await $fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: {
-        model: 'llama-3.1-70b-instruct',
+        model: 'sonar',
         messages: [
-          { role: 'system', content: 'Você é um bibliotecário acadêmico especializado em história e liturgia anglicana. Retorne apenas JSON.' },
+          { role: 'system', content: 'Você é um bibliotecário acadêmico anglicano. Responda apenas com JSON puro.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.1
       }
     })
 
-    const content = aiResponse.choices[0].message.content
-    const jsonStr = content.match(/\{[\s\S]*\}/)?.[0] || content
-    const analysis = JSON.parse(jsonStr)
+    const rawContent = aiResponse.choices[0].message.content
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/)
+    const analysis = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent)
 
-    // Opcional: Já salvar os metadados no Supabase usando o cliente admin
     if (documentId) {
       const adminSupabase = useAdminSupabase()
       await adminSupabase
@@ -58,18 +67,19 @@ export default defineEventHandler(async (event) => {
         .update({
           title: analysis.title,
           summary: analysis.summary,
+          publication_year: analysis.publication_year,
           language: analysis.language,
-          // Adicione outros campos conforme necessário
+          content_text: extractedText.substring(0, 10000) // Salva uma parte do texto para SEO
         })
         .eq('id', documentId)
     }
     
     return analysis
-  } catch (error) {
+  } catch (error: any) {
     console.error('AI Analysis Error:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: 'Falha ao analisar o documento com IA'
+      statusMessage: `Erro na análise: ${error.message}`
     })
   }
 })
