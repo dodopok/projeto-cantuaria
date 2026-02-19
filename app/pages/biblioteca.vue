@@ -15,10 +15,10 @@
 
     <!-- Filters & Main Content -->
     <section class="py-8 md:py-12 bg-cantuaria-cream/50 min-h-screen">
-      <div class="container mx-auto px-6 flex flex-col lg:flex-row gap-8 lg:gap-12">
+      <div class="container mx-auto px-6 flex flex-col md:flex-row gap-8 lg:gap-12">
         
         <!-- Sidebar Filters -->
-        <aside class="w-full lg:w-64 space-y-8 shrink-0">
+        <aside class="w-full md:w-64 space-y-8 shrink-0">
           <!-- Search Block - Always visible -->
           <div class="bg-white p-6 border border-cantuaria-charcoal/5 shadow-sm">
             <h3 class="font-serif text-lg text-cantuaria-oxford mb-6 border-b border-cantuaria-oxford/10 pb-2">Pesquisa</h3>
@@ -33,15 +33,15 @@
             </div>
             
             <!-- Mobile Toggle for Additional Filters -->
-            <button @click="showMobileFilters = !showMobileFilters" class="lg:hidden w-full mt-6 py-2 bg-cantuaria-cream/50 border border-cantuaria-oxford/10 text-cantuaria-oxford text-[9px] uppercase font-bold tracking-widest flex items-center justify-center gap-2">
+            <button @click="showMobileFilters = !showMobileFilters" class="md:hidden w-full mt-6 py-2 bg-cantuaria-cream/50 border border-cantuaria-oxford/10 text-cantuaria-oxford text-[9px] uppercase font-bold tracking-widest flex items-center justify-center gap-2">
               <LucideFilter class="w-3 h-3" />
               {{ showMobileFilters ? 'Ocultar Filtros' : 'Mais Filtros' }}
             </button>
 
-            <div :class="['mt-8 space-y-6 lg:block', showMobileFilters ? 'block' : 'hidden']">
+            <div :class="['mt-8 space-y-6 md:block', showMobileFilters ? 'block' : 'hidden']">
               <div>
                 <h4 class="text-[9px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40 mb-3">Tipo de Obra</h4>
-                <div class="grid grid-cols-2 lg:grid-cols-1 gap-2">
+                <div class="grid grid-cols-2 md:grid-cols-1 gap-2">
                   <label v-for="type in ['Livro', 'Artigo', 'LOC', 'Documento']" :key="type" class="flex items-center gap-2 cursor-pointer group">
                     <input type="checkbox" :value="type" v-model="filterTypes" class="w-3 h-3 border-cantuaria-charcoal/20 text-cantuaria-oxford focus:ring-cantuaria-oxford" />
                     <span class="text-sm text-cantuaria-charcoal/60 group-hover:text-cantuaria-oxford transition-colors uppercase tracking-widest text-[9px] font-bold">{{ type }}</span>
