@@ -92,13 +92,13 @@
                 </button>
               </div>
 
-              <!-- Cover & Title -->
+              <!-- Cover & Details -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="md:col-span-1">
                   <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 block mb-4">Capa da Obra</label>
                   <div 
                     @click="$refs.coverInput.click()"
-                    class="aspect-[3/4.5] bg-cantuaria-cream/50 border-2 border-dashed border-cantuaria-charcoal/10 flex flex-col items-center justify-center p-4 cursor-pointer hover:border-cantuaria-oxford/30 transition-colors group relative overflow-hidden"
+                    class="aspect-[3/4.5] bg-cantuaria-cream/50 border-2 border-dashed border-cantuaria-charcoal/10 flex flex-col items-center justify-center p-4 cursor-pointer hover:border-cantuaria-oxford/30 transition-colors group relative overflow-hidden shadow-inner"
                   >
                     <img v-if="editingItem.thumbnail_url" :src="editingItem.thumbnail_url" class="absolute inset-0 w-full h-full object-cover" />
                     <template v-else>
@@ -116,6 +116,12 @@
                     <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título Final</label>
                     <input type="text" v-model="editingItem.title" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl" />
                   </div>
+                  
+                  <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Autor(es) (separados por vírgula)</label>
+                    <input type="text" v-model="editingItem.authors_list" placeholder="Ex: John Donne, Richard Hooker" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
+                  </div>
+
                   <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2">
                       <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano</label>
@@ -126,12 +132,22 @@
                       <input type="text" v-model="editingItem.language" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
                     </div>
                   </div>
+
+                  <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label>
+                    <input type="text" v-model="editingItem.category_name" placeholder="Ex: Liturgia" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
+                  </div>
                 </div>
               </div>
 
               <div class="space-y-2">
                 <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Resumo da Obra</label>
                 <textarea rows="6" v-model="editingItem.summary" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed"></textarea>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tags (separadas por vírgula)</label>
+                <input type="text" v-model="editingItem.tags_list" placeholder="Ex: BCP, Reforma, 1662" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm" />
               </div>
 
               <div class="pt-10 flex justify-end gap-4 border-t border-cantuaria-oxford/5">
