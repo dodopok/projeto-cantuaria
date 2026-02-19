@@ -108,13 +108,13 @@
               <h3 class="font-serif text-3xl text-cantuaria-oxford">Processamento em Lote</h3>
               <p class="text-xs text-cantuaria-charcoal/40 uppercase tracking-widest font-bold mt-1">Análise inteligente de múltiplos documentos simultaneamente</p>
             </div>
-            <button v-if="!isAnalyzingBatch" @click="closeBatch" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-6 h-6" /></button>
+            <button v-if="!isAnalyzingBatch && !publishingBatch" @click="closeBatch" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-6 h-6" /></button>
           </header>
 
           <div class="flex-grow overflow-auto p-8 bg-cantuaria-cream/20">
             <div class="grid grid-cols-1 gap-6">
-              <div v-for="res in batchResults" :key="res.id" class="border border-cantuaria-charcoal/10 p-6 rounded-sm bg-white shadow-sm bg-white hover:border-cantuaria-gold/50">
-                <div class="flex flex-col lg:flex-row gap-8">
+              <div v-for="res in batchResults" :key="res.id" class="border border-cantuaria-charcoal/10 p-6 rounded-sm bg-white shadow-sm hover:border-cantuaria-gold/50">
+                <div class="flex flex-col lg:flex-row gap-8" :class="{ 'opacity-50 pointer-events-none': publishingBatch }">
                   <div class="lg:w-1/4">
                     <div class="flex items-center gap-3 mb-4">
                       <LucideFileText v-if="res.status !== 'complete'" class="w-5 h-5 text-cantuaria-charcoal/20" />
@@ -130,16 +130,16 @@
 
                   <div v-if="res.status === 'complete'" class="lg:w-3/4 grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
                     <div class="space-y-4">
-                      <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Título</label><input type="text" v-model="res.data.title" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-sm font-serif bg-transparent" /></div>
-                      <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Autores</label><input type="text" v-model="res.data.authors_list" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent" /></div>
+                      <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Título</label><input type="text" v-model="res.data.title" :disabled="publishingBatch" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-sm font-serif bg-transparent disabled:opacity-50" /></div>
+                      <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Autores</label><input type="text" v-model="res.data.authors_list" :disabled="publishingBatch" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent disabled:opacity-50" /></div>
                       <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Ano</label><input type="number" v-model="res.data.publication_year" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent" /></div>
-                        <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Categoria</label><input type="text" v-model="res.data.category_name" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent" /></div>
+                        <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Ano</label><input type="number" v-model="res.data.publication_year" :disabled="publishingBatch" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent disabled:opacity-50" /></div>
+                        <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Categoria</label><input type="text" v-model="res.data.category_name" :disabled="publishingBatch" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent disabled:opacity-50" /></div>
                       </div>
                     </div>
                     <div class="space-y-4">
-                      <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Resumo</label><textarea rows="3" v-model="res.data.summary" class="w-full border border-cantuaria-charcoal/10 p-2 focus:outline-none focus:border-cantuaria-gold text-xs leading-relaxed bg-cantuaria-cream/10"></textarea></div>
-                      <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Tags</label><input type="text" v-model="res.data.tags_list" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent" /></div>
+                      <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Resumo</label><textarea rows="3" v-model="res.data.summary" :disabled="publishingBatch" class="w-full border border-cantuaria-charcoal/10 p-2 focus:outline-none focus:border-cantuaria-gold text-xs leading-relaxed bg-cantuaria-cream/10 disabled:opacity-50"></textarea></div>
+                      <div class="space-y-1"><label class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Tags</label><input type="text" v-model="res.data.tags_list" :disabled="publishingBatch" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-gold text-xs bg-transparent disabled:opacity-50" /></div>
                     </div>
                   </div>
                 </div>
@@ -150,8 +150,11 @@
           <footer class="p-8 border-t border-cantuaria-charcoal/5 bg-cantuaria-cream/30 flex justify-between items-center">
             <div class="flex items-center gap-4"><span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">{{ completedCount }} de {{ batchResults.length }} processados</span></div>
             <div class="flex gap-4">
-              <button v-if="!isAnalyzingBatch" @click="closeBatch" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
-              <button @click="saveBatchResults" :disabled="isAnalyzingBatch || completedCount === 0 || publishingBatch" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all">{{ publishingBatch ? 'Salvando...' : 'Publicar Todos' }}</button>
+              <button v-if="!isAnalyzingBatch && !publishingBatch" @click="closeBatch" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
+              <button @click="saveBatchResults" :disabled="isAnalyzingBatch || completedCount === 0 || publishingBatch" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all">
+                <template v-if="publishingBatch"><LucideLoader2 class="w-4 h-4 animate-spin inline mr-2" /> Salvando...</template>
+                <template v-else>Publicar Todos</template>
+              </button>
             </div>
           </footer>
         </div>
@@ -162,7 +165,7 @@
         <div class="bg-white w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl overflow-hidden relative animate-fade-in">
           <header class="p-6 border-b border-cantuaria-charcoal/5 flex justify-between items-center bg-white">
             <h3 class="font-serif text-2xl text-cantuaria-oxford">Gerenciamento de Documento</h3>
-            <button @click="editingItem = null" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-6 h-6" /></button>
+            <button @click="editingItem = null" :disabled="publishing" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full disabled:opacity-30"><LucideX class="w-6 h-6" /></button>
           </header>
 
           <div class="flex-grow flex overflow-hidden">
@@ -170,10 +173,10 @@
               <Reader :url="editingItem.file_url" :type="editingItem.type" />
             </div>
 
-            <div class="w-full lg:w-1/2 overflow-y-auto p-8 lg:p-12 space-y-10">
+            <div class="w-full lg:w-1/2 overflow-y-auto p-8 lg:p-12 space-y-10" :class="{ 'opacity-50 pointer-events-none': publishing }">
               <div class="flex justify-between items-center border-b border-cantuaria-oxford/5 pb-6">
                 <h4 class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">Dados da Obra</h4>
-                <button @click="analyzeWithAI" :disabled="analyzing" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50">
+                <button @click="analyzeWithAI" :disabled="analyzing || publishing" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50">
                   <LucideSparkles class="w-3.5 h-3.5" :class="{ 'animate-spin': analyzing }" />
                   {{ analyzing ? 'Analisando...' : 'Re-analisar com IA' }}
                 </button>
@@ -190,11 +193,11 @@
                     <input ref="coverInput" type="file" class="hidden" @change="handleCoverUpload" accept="image/*" />
                   </div>
                   <div class="flex flex-col gap-2 mt-4">
-                    <button @click.stop="generateInstitutionalCover" class="w-full py-2 border border-cantuaria-gold text-cantuaria-gold text-[8px] uppercase tracking-widest font-bold hover:bg-cantuaria-gold hover:text-white transition-all">Gerar Capa Cantuária</button>
+                    <button @click.stop="generateInstitutionalCover" :disabled="publishing" class="w-full py-2 border border-cantuaria-gold text-cantuaria-gold text-[8px] uppercase tracking-widest font-bold hover:bg-cantuaria-gold hover:text-white transition-all disabled:opacity-50">Gerar Capa Cantuária</button>
                     <button 
                       v-if="editingItem.file_url?.toLowerCase().endsWith('.pdf')" 
                       @click.stop="capturePdfCover" 
-                      :disabled="capturingPdf"
+                      :disabled="capturingPdf || publishing"
                       class="w-full py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[8px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50"
                     >
                       {{ capturingPdf ? 'Capturando...' : 'Usar 1ª pág como Capa' }}
@@ -204,21 +207,21 @@
                 <div class="md:col-span-2 space-y-6">
                   <div class="space-y-2">
                     <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título Final</label>
-                    <input type="text" v-model="editingItem.title" @input="updateSlugSuggestion" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent" />
+                    <input type="text" v-model="editingItem.title" @input="updateSlugSuggestion" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent disabled:opacity-50" />
                   </div>
                   <div class="space-y-2">
                     <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Link Amigável (Slug)</label>
-                    <input type="text" v-model="editingItem.slug" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-oxford text-[10px] font-mono bg-transparent text-cantuaria-charcoal/40" />
+                    <input type="text" v-model="editingItem.slug" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-oxford text-[10px] font-mono bg-transparent text-cantuaria-charcoal/40 disabled:opacity-50" />
                   </div>
-                  <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Autor(es)</label><input type="text" v-model="editingItem.authors_list" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
+                  <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Autor(es)</label><input type="text" v-model="editingItem.authors_list" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent disabled:opacity-50" /></div>
                   <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano</label><input type="number" v-model="editingItem.publication_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
-                    <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Idioma</label><input type="text" v-model="editingItem.language" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
+                    <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano</label><input type="number" v-model="editingItem.publication_year" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent disabled:opacity-50" /></div>
+                    <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Idioma</label><input type="text" v-model="editingItem.language" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent disabled:opacity-50" /></div>
                   </div>
-                  <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label><input type="text" v-model="editingItem.category_name" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
+                  <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label><input type="text" v-model="editingItem.category_name" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent disabled:opacity-50" /></div>
                   <div class="space-y-2">
                     <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tipo de Documento</label>
-                    <select v-model="editingItem.type" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent appearance-none">
+                    <select v-model="editingItem.type" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent appearance-none disabled:opacity-50">
                       <option value="Livro">Livro</option>
                       <option value="Artigo">Artigo</option>
                       <option value="LOC">Liturgia (LOC)</option>
@@ -229,11 +232,14 @@
                   </div>
                 </div>
               </div>
-              <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Resumo</label><textarea rows="6" v-model="editingItem.summary" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed bg-cantuaria-cream/10"></textarea></div>
-              <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tags</label><input type="text" v-model="editingItem.tags_list" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
+              <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Resumo</label><textarea rows="6" v-model="editingItem.summary" :disabled="publishing" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed bg-cantuaria-cream/10 disabled:opacity-50"></textarea></div>
+              <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tags</label><input type="text" v-model="editingItem.tags_list" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent disabled:opacity-50" /></div>
               <div class="pt-10 flex justify-end gap-4 border-t border-cantuaria-oxford/5">
-                <button @click="editingItem = null" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
-                <button @click="publish" :disabled="publishing" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all">Salvar & Publicar</button>
+                <button @click="editingItem = null" :disabled="publishing" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors disabled:opacity-50">Cancelar</button>
+                <button @click="publish" :disabled="publishing" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all">
+                  <template v-if="publishing"><LucideLoader2 class="w-4 h-4 animate-spin inline mr-2" /> Salvando...</template>
+                  <template v-else>Salvar & Publicar</template>
+                </button>
               </div>
             </div>
           </div>

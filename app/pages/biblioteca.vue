@@ -32,6 +32,10 @@
               <LucideSearch class="w-4 h-4 absolute left-3 top-2.5 text-cantuaria-charcoal/30" />
             </div>
             <button @click="handleSearch" class="w-full mt-4 py-2 bg-cantuaria-oxford text-white text-[10px] uppercase font-bold tracking-widest hover:bg-cantuaria-oxford/90">Filtrar</button>
+            
+            <NuxtLink to="/pesquisa" class="block text-center mt-6 text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">
+              Pesquisa Avançada
+            </NuxtLink>
           </div>
 
           <div>

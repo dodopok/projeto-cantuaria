@@ -19,9 +19,9 @@
       </div>
 
       <div class="flex items-center gap-4">
-        <button class="p-2 text-cantuaria-charcoal/60 hover:text-cantuaria-oxford transition-colors">
+        <NuxtLink to="/pesquisa" class="p-2 text-cantuaria-charcoal/60 hover:text-cantuaria-oxford transition-colors" title="Pesquisa Avançada">
           <LucideSearch class="w-5 h-5" />
-        </button>
+        </NuxtLink>
         <NuxtLink to="/login" class="btn-primary py-2 px-5 text-sm">Acesso</NuxtLink>
       </div>
     </nav>
