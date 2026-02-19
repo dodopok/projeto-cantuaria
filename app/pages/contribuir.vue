@@ -72,6 +72,17 @@
               </div>
             </div>
 
+            <div v-if="duplicatesFound.length > 0" class="p-4 bg-amber-50 border border-cantuaria-gold/20 rounded">
+              <div class="flex items-center gap-3 text-amber-800 mb-2 font-bold text-xs">
+                <LucideAlertTriangle class="w-4 h-4" />
+                Arquivos já existentes no acervo:
+              </div>
+              <ul class="text-[10px] text-amber-700 list-disc list-inside">
+                <li v-for="name in duplicatesFound" :key="name">{{ name }}</li>
+              </ul>
+              <p class="mt-2 text-[9px] text-amber-600 uppercase font-bold">Eles serão ignorados no envio.</p>
+            </div>
+
             <div v-if="error" class="text-sm text-cantuaria-crimson font-medium bg-cantuaria-crimson/5 p-4 rounded border border-cantuaria-crimson/10 mt-8">
               {{ error }}
             </div>
@@ -79,15 +90,15 @@
             <div class="pt-12">
               <button 
                 @click="handleSubmit" 
-                :disabled="uploading"
+                :disabled="uploading || (selectedFiles.length === duplicatesFound.length)"
                 class="w-full py-6 bg-cantuaria-oxford text-white font-bold uppercase tracking-[0.3em] text-xs hover:bg-cantuaria-oxford/90 shadow-2xl transition-all active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-4"
               >
                 <template v-if="uploading">
                   <LucideLoader2 class="w-5 h-5 animate-spin" />
-                  Enviando {{ currentUploadIndex + 1 }} de {{ selectedFiles.length }}...
+                  Enviando {{ currentUploadIndex + 1 }} de {{ selectedFiles.length - duplicatesFound.length }}...
                 </template>
                 <template v-else>
-                  Confirmar Envio de {{ selectedFiles.length }} Arquivos
+                  Confirmar Envio de {{ selectedFiles.length - duplicatesFound.length }} Arquivos
                 </template>
               </button>
               <p class="text-center text-[10px] text-cantuaria-charcoal/30 uppercase tracking-widest mt-8 italic">
@@ -107,7 +118,8 @@ import {
   FileText as LucideFileText, 
   CheckCircle as LucideCheckCircle,
   Loader2 as LucideLoader2,
-  X as LucideX
+  X as LucideX,
+  AlertTriangle as LucideAlertTriangle
 } from 'lucide-vue-next'
 
 const supabase = useSupabaseClient()
@@ -115,21 +127,22 @@ const uploading = ref(false)
 const success = ref(false)
 const error = ref<string | null>(null)
 const selectedFiles = ref<File[]>([])
+const duplicatesFound = ref<string[]>([])
 const isDragging = ref(false)
 const currentUploadIndex = ref(0)
 
 const topRef = ref<HTMLElement | null>(null)
-const listRef = ref<HTMLElement | null>(null)
+
+// Função para calcular SHA-256 do arquivo (DNA do conteúdo)
+const calculateHash = async (file: File) => {
+  const buffer = await file.arrayBuffer()
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
 const slugify = (text: string) => {
-  return text
-    .toString()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-+/g, '-')
+  return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-')
 }
 
 const handleFileSelect = (e: any) => {
@@ -145,7 +158,7 @@ const handleDrop = (e: DragEvent) => {
   }
 }
 
-const addFiles = (newFiles: File[]) => {
+const addFiles = async (newFiles: File[]) => {
   const allowedExts = ['pdf', 'epub', 'docx', 'txt']
   const filtered = newFiles.filter(f => {
     const ext = f.name.split('.').pop()?.toLowerCase()
@@ -154,8 +167,17 @@ const addFiles = (newFiles: File[]) => {
   
   selectedFiles.value = [...selectedFiles.value, ...filtered]
   error.value = null
+  duplicatesFound.value = []
 
-  // Scroll suave para a lista de arquivos se houver novos
+  // Verificar duplicatas no banco via Hash
+  for (const file of selectedFiles.value) {
+    const hash = await calculateHash(file)
+    const { data } = await supabase.from('documents').select('title').eq('file_hash', hash).maybeSingle()
+    if (data) {
+      duplicatesFound.value.push(file.name)
+    }
+  }
+
   if (filtered.length > 0) {
     nextTick(() => {
       const el = document.getElementById('file-list')
@@ -165,63 +187,59 @@ const addFiles = (newFiles: File[]) => {
 }
 
 const removeFile = (index: number) => {
+  const name = selectedFiles.value[index].name
   selectedFiles.value.splice(index, 1)
+  duplicatesFound.value = duplicatesFound.value.filter(n => n !== name)
 }
 
 const resetFlow = () => {
   success.value = false
   selectedFiles.value = []
+  duplicatesFound.value = []
   error.value = null
   topRef.value?.scrollIntoView({ behavior: 'smooth' })
 }
 
 const handleSubmit = async () => {
-  if (selectedFiles.value.length === 0) return
+  const filesToUpload = selectedFiles.value.filter(f => !duplicatesFound.value.includes(f.name))
+  if (filesToUpload.length === 0) return
 
   uploading.value = true
   error.value = null
 
   try {
-    for (let i = 0; i < selectedFiles.value.length; i++) {
+    for (let i = 0; i < filesToUpload.length; i++) {
       currentUploadIndex.value = i
-      const file = selectedFiles.value[i]
+      const file = filesToUpload[i]
+      const hash = await calculateHash(file)
       
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `uploads/${fileName}`
 
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file)
-
+      const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, file)
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath)
+      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath)
 
       const provTitle = file.name.replace(/\.[^/.]+$/, "")
-      const { error: dbError } = await supabase
-        .from('documents')
-        .insert({
-          title: provTitle,
-          type: 'Documento', 
-          file_url: publicUrl,
-          slug: `${slugify(provTitle)}-${Date.now().toString().slice(-4)}`,
-          status: 'pending'
-        })
+      const { error: dbError } = await supabase.from('documents').insert({
+        title: provTitle,
+        type: 'Documento', 
+        file_url: publicUrl,
+        file_hash: hash,
+        slug: `${slugify(provTitle)}-${Date.now().toString().slice(-4)}`,
+        status: 'pending'
+      })
 
       if (dbError) throw dbError
     }
 
     success.value = true
-    // Scroll para o topo para ver a mensagem de sucesso
-    nextTick(() => {
-      topRef.value?.scrollIntoView({ behavior: 'smooth' })
-    })
+    nextTick(() => { topRef.value?.scrollIntoView({ behavior: 'smooth' }) })
   } catch (err) {
     console.error('Erro no envio múltiplo:', err)
-    error.value = 'Ocorreu um erro ao enviar um ou mais documentos. Verifique sua conexão.'
+    error.value = 'Erro ao enviar. Verifique sua conexão.'
   } finally {
     uploading.value = false
     currentUploadIndex.value = 0
@@ -230,20 +248,9 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fade-in 0.6s ease-out forwards;
-}
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.05);
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #C5A059;
-}
+@keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #C5A059; }
 </style>
