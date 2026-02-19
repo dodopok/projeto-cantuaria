@@ -272,16 +272,15 @@ const slugify = (text: string) => {
     .toString()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[^a-z0-9]+/g, '-')     // Substitui caracteres não alfanuméricos por -
-    .replace(/^-+|-+$/g, '')         // Remove dashes do início/fim
-    .replace(/-+/g, '-')             // Remove dashes duplicados
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-+/g, '-')
 }
 
 const updateSlugSuggestion = () => {
   if (editingItem.value && editingItem.value.title) {
     const cleanSlug = slugify(editingItem.value.title)
-    // Só atualiza se o slug original for muito curto ou baseado no filename antigo
     if (!editingItem.value.slug || editingItem.value.slug.length < 5) {
       editingItem.value.slug = `${cleanSlug}-${Math.random().toString(36).slice(-4)}`
     }
@@ -312,13 +311,8 @@ const capturePdfCover = async () => {
   capturingPdf.value = true
   try {
     const pdfjs = await import('pdfjs-dist')
-    // Usando unpkg que é mais confiável para versões específicas do NPM
     pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
-
-    const loadingTask = pdfjs.getDocument({
-      url: editingItem.value.file_url,
-      disableFontFace: true // Evita erros de fonte no renderizador
-    })
+    const loadingTask = pdfjs.getDocument({ url: editingItem.value.file_url, disableFontFace: true })
     const pdf = await loadingTask.promise
     const page = await pdf.getPage(1)
     const viewport = page.getViewport({ scale: 1.0 })
@@ -351,59 +345,28 @@ const saveBatchResults = async () => {
   publishingBatch.value = true
   try {
     for (const res of batchResults.value.filter(r => r.status === 'complete')) { 
-      // Para o lote, gera slugs limpos automaticamente
-      res.data.slug = `${slugify(res.data.title)}-${Math.random().toString(36).slice(-4)}`
-      await publishItem(res.data, res.id) 
+      res.data.slug = res.data.slug || `${slugify(res.data.title)}-${Math.random().toString(36).slice(-4)}`
+      await $fetch('/api/documents/publish', { method: 'POST', body: { id: res.id, data: res.data } })
     }
     closeBatch(); await fetchData()
-  } finally { publishingBatch.value = false }
+  } catch (err) { alert('Erro ao salvar lote.') } finally { publishingBatch.value = false }
 }
 
 const closeBatch = () => { batchAnalysisActive.value = false; batchResults.value = []; selectedIds.value = [] }
 
-const publishItem = async (data: any, id: string) => {
-  let categoryId = null
-  if (data.category_name) {
-    const catSlug = slugify(data.category_name)
-    const { data: cat } = await supabase.from('categories').upsert({ name: data.category_name, slug: catSlug }, { onConflict: 'slug' }).select().single()
-    if (cat) categoryId = (cat as any).id
-  }
-
-  // Se não houver slug nos dados (manual), gera um
-  const finalSlug = data.slug || `${slugify(data.title)}-${id.slice(-4)}`
-
-  await supabase.from('documents').update({ 
-    title: data.title, 
-    slug: finalSlug,
-    type: data.type || 'Documento', 
-    summary: data.summary, 
-    publication_year: data.publication_year, 
-    language: data.language, 
-    thumbnail_url: data.thumbnail_url, 
-    category_id: categoryId, 
-    status: 'published' 
-  }).eq('id', id)
-  
-  if (data.authors_list) {
-    await supabase.from('document_authors').delete().eq('document_id', id)
-    for (const name of data.authors_list.split(',').map((a: string) => a.trim())) {
-      const autSlug = slugify(name)
-      const { data: aut } = await supabase.from('authors').upsert({ name, slug: autSlug }, { onConflict: 'slug' }).select().single()
-      if (aut) await supabase.from('document_authors').insert({ document_id: id, author_id: (aut as any).id })
-    }
-  }
-
-  if (data.tags_list) {
-    await supabase.from('document_tags').delete().eq('document_id', id)
-    for (const name of data.tags_list.split(',').map((t: string) => t.trim())) {
-      const tagSlug = slugify(name)
-      const { data: tag } = await supabase.from('tags').upsert({ name, slug: tagSlug }, { onConflict: 'slug' }).select().single()
-      if (tag) await supabase.from('document_tags').insert({ document_id: id, tag_id: (tag as any).id })
-    }
-  }
+const publish = async () => { 
+  publishing.value = true
+  try { 
+    await $fetch('/api/documents/publish', { 
+      method: 'POST', 
+      body: { id: editingItem.value.id, data: editingItem.value } 
+    })
+    editingItem.value = null
+    await fetchData() 
+  } catch (err) {
+    alert('Erro ao publicar documento.')
+  } finally { publishing.value = false } 
 }
-
-const publish = async () => { publishing.value = true; try { await publishItem(editingItem.value, editingItem.value.id); editingItem.value = null; await fetchData() } finally { publishing.value = false } }
 
 const handleCoverUpload = async (e: any) => {
   const file = e.target.files[0]; if (!file) return; uploadingCover.value = true
