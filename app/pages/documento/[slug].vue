@@ -1,7 +1,38 @@
 <template>
   <NuxtLayout>
-    <div v-if="loading" class="min-h-screen bg-cantuaria-cream flex items-center justify-center">
-      <LucideLoader2 class="w-10 h-10 animate-spin text-cantuaria-oxford/20" />
+    <div v-if="loading && !document" class="min-h-screen bg-cantuaria-cream">
+      <nav class="container mx-auto px-6 py-6 border-b border-cantuaria-oxford/5 flex justify-between items-center">
+        <div class="h-4 w-32 animate-skeleton"></div>
+        <div class="flex gap-6">
+          <div class="h-4 w-24 animate-skeleton"></div>
+          <div class="h-4 w-24 animate-skeleton"></div>
+        </div>
+      </nav>
+      <section class="container mx-auto px-6 py-12 md:py-24">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
+          <div class="lg:col-span-4 space-y-8">
+            <div class="aspect-[3/4.5] w-full max-w-sm mx-auto lg:max-w-none animate-skeleton"></div>
+            <div class="grid grid-cols-2 gap-8">
+              <div class="space-y-2"><div class="h-3 w-12 animate-skeleton"></div><div class="h-6 w-20 animate-skeleton"></div></div>
+              <div class="space-y-2"><div class="h-3 w-12 animate-skeleton"></div><div class="h-6 w-20 animate-skeleton"></div></div>
+            </div>
+          </div>
+          <div class="lg:col-span-8 space-y-12">
+            <div class="space-y-4">
+              <div class="h-16 w-full animate-skeleton"></div>
+              <div class="h-16 w-2/3 animate-skeleton"></div>
+            </div>
+            <div class="flex gap-8 border-y border-cantuaria-oxford/10 py-8">
+              <div class="space-y-2"><div class="h-3 w-12 animate-skeleton"></div><div class="h-8 w-40 animate-skeleton"></div></div>
+            </div>
+            <div class="space-y-6">
+              <div class="h-4 w-full animate-skeleton"></div>
+              <div class="h-4 w-full animate-skeleton"></div>
+              <div class="h-4 w-4/5 animate-skeleton"></div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
     <div v-else-if="!document" class="min-h-screen bg-cantuaria-cream flex flex-col items-center justify-center text-center px-6">

@@ -30,4 +30,8 @@
            after:left-0 after:h-[1px] after:w-0 after:bg-cantuaria-oxford after:transition-all 
            hover:after:w-full;
   }
+
+  .animate-skeleton {
+    @apply bg-cantuaria-charcoal/5 animate-pulse rounded-sm;
+  }
 }

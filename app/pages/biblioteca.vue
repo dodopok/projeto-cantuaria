@@ -32,43 +32,57 @@
               <LucideSearch class="w-4 h-4 absolute left-3 top-2.5 text-cantuaria-charcoal/30" />
             </div>
             
-            <NuxtLink to="/pesquisa" class="block text-center mt-6 text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">
-              Pesquisa Avançada
-            </NuxtLink>
-          </div>
+            <!-- Mobile Toggle for Additional Filters -->
+            <button @click="showMobileFilters = !showMobileFilters" class="lg:hidden w-full mt-6 py-2 bg-cantuaria-cream/50 border border-cantuaria-oxford/10 text-cantuaria-oxford text-[9px] uppercase font-bold tracking-widest flex items-center justify-center gap-2">
+              <LucideFilter class="w-3 h-3" />
+              {{ showMobileFilters ? 'Ocultar Filtros' : 'Mais Filtros' }}
+            </button>
 
-          <!-- Mobile Toggle for Additional Filters -->
-          <button @click="showMobileFilters = !showMobileFilters" class="lg:hidden w-full py-3 bg-white border border-cantuaria-oxford/10 text-cantuaria-oxford text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-2">
-            <LucideFilter class="w-4 h-4" />
-            {{ showMobileFilters ? 'Ocultar Filtros' : 'Mostrar Filtros' }}
-          </button>
+            <div :class="['mt-8 space-y-6 lg:block', showMobileFilters ? 'block' : 'hidden']">
+              <div>
+                <h4 class="text-[9px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40 mb-3">Tipo de Obra</h4>
+                <div class="grid grid-cols-2 lg:grid-cols-1 gap-2">
+                  <label v-for="type in ['Livro', 'Artigo', 'LOC', 'Documento']" :key="type" class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" :value="type" v-model="filterTypes" class="w-3 h-3 border-cantuaria-charcoal/20 text-cantuaria-oxford focus:ring-cantuaria-oxford" />
+                    <span class="text-sm text-cantuaria-charcoal/60 group-hover:text-cantuaria-oxford transition-colors uppercase tracking-widest text-[9px] font-bold">{{ type }}</span>
+                  </label>
+                </div>
+              </div>
 
-          <div :class="['space-y-10 lg:block', showMobileFilters ? 'block' : 'hidden']">
-            <div>
-              <h3 class="font-serif text-lg text-cantuaria-oxford mb-6 border-b border-cantuaria-oxford/10 pb-2">Tipo de Obra</h3>
-              <div class="grid grid-cols-2 lg:grid-cols-1 gap-3">
-                <label v-for="type in ['Livro', 'Artigo', 'LOC', 'Documento']" :key="type" class="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" :value="type" v-model="filterTypes" class="w-4 h-4 border-cantuaria-charcoal/20 text-cantuaria-oxford focus:ring-cantuaria-oxford" />
-                  <span class="text-sm text-cantuaria-charcoal/60 group-hover:text-cantuaria-oxford transition-colors uppercase tracking-widest text-[10px] font-bold">{{ type }}</span>
-                </label>
+              <div v-if="categories.length > 0">
+                <h4 class="text-[9px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40 mb-3">Categorias</h4>
+                <div class="flex flex-wrap gap-2">
+                  <button 
+                    v-for="cat in categories" 
+                    :key="cat.id" 
+                    @click="toggleCategory(cat.slug)"
+                    :class="['px-2 py-1 text-[8px] uppercase tracking-widest font-bold border transition-all', filterCategory === cat.slug ? 'bg-cantuaria-oxford text-white border-cantuaria-oxford' : 'bg-transparent text-cantuaria-charcoal/40 border-cantuaria-charcoal/10 hover:border-cantuaria-oxford']"
+                  >
+                    {{ cat.name }}
+                  </button>
+                </div>
               </div>
             </div>
+
+            <NuxtLink to="/pesquisa" class="block text-center mt-8 pt-4 border-t border-cantuaria-charcoal/5 text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">
+              Pesquisa Avançada
+            </NuxtLink>
           </div>
         </aside>
 
         <!-- Document Grid -->
         <div class="flex-grow">
-          <div v-if="loading && documents.length === 0" class="py-20 text-center">
-            <LucideLoader2 class="w-10 h-10 animate-spin mx-auto text-cantuaria-oxford/20" />
+          <div v-if="loading && documents.length === 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10">
+            <DocumentSkeleton v-for="i in 6" :key="i" />
           </div>
 
-          <div v-else-if="documents.length === 0" class="py-20 text-center bg-white border border-cantuaria-charcoal/5">
+          <div v-else-if="documents.length === 0 && !loading" class="py-20 text-center bg-white border border-cantuaria-charcoal/5">
             <LucideBookX class="w-12 h-12 mx-auto mb-4 text-cantuaria-charcoal/10" />
             <p class="font-serif text-xl text-cantuaria-charcoal/40">Nenhuma obra encontrada.</p>
           </div>
 
           <div v-else class="space-y-12">
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10">
+            <div :class="['grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10 transition-opacity duration-300', loading ? 'opacity-50 pointer-events-none' : 'opacity-100']">
               <NuxtLink v-for="doc in documents" :key="doc.id" :to="`/documento/${doc.slug}`">
                 <DocumentCard :document="formatDoc(doc)" />
               </NuxtLink>
@@ -105,6 +119,7 @@ import { watchDebounced } from '@vueuse/core'
 const route = useRoute()
 const router = useRouter()
 const documents = ref<any[]>([])
+const categories = ref<any[]>([])
 const loading = ref(true)
 const showMobileFilters = ref(false)
 const searchQuery = ref(route.query.q?.toString() || '')
@@ -113,6 +128,14 @@ const filterCategory = ref(route.query.categoria?.toString() || '')
 const page = ref(0)
 const pageSize = 9
 const hasMore = ref(true)
+
+const fetchCategories = async () => {
+  try {
+    categories.value = await $fetch('/api/categories') as any[]
+  } catch (error) {
+    console.error('Erro ao buscar categorias:', error)
+  }
+}
 
 const fetchDocuments = async (append = false) => {
   loading.value = true
@@ -146,6 +169,12 @@ const handleSearch = () => {
   router.replace({ query })
 }
 
+const toggleCategory = (slug: string) => {
+  if (filterCategory.value === slug) filterCategory.value = ''
+  else filterCategory.value = slug
+  handleSearch()
+}
+
 const loadMore = () => { page.value++; fetchDocuments(true) }
 const formatDoc = (doc: any) => ({
   ...doc,
@@ -163,12 +192,14 @@ watch(filterTypes, () => {
   handleSearch()
 }, { deep: true })
 
-onMounted(() => { fetchDocuments() })
+onMounted(() => { 
+  fetchCategories()
+  fetchDocuments() 
+})
 
 watch(() => route.query.q, (newQ) => { 
   if (newQ !== searchQuery.value) { 
     searchQuery.value = newQ?.toString() || ''; 
-    // fetchDocuments already called by watchDebounced if searchQuery changes
   } 
 })
 </script>

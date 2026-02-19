@@ -14,8 +14,15 @@
 
     <section class="py-20 bg-cantuaria-cream min-h-screen">
       <div class="container mx-auto px-6">
-        <div v-if="loading" class="py-20 text-center">
-          <LucideLoader2 class="w-10 h-10 animate-spin mx-auto text-cantuaria-oxford/20" />
+        <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div v-for="i in 6" :key="i" class="bg-white p-8 border border-cantuaria-charcoal/5 shadow-sm">
+            <div class="flex justify-between items-start mb-6">
+              <div class="w-12 h-12 animate-skeleton rounded-full"></div>
+              <div class="h-3 w-12 animate-skeleton"></div>
+            </div>
+            <div class="h-8 w-3/4 animate-skeleton mb-2"></div>
+            <div class="h-3 w-1/2 animate-skeleton"></div>
+          </div>
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

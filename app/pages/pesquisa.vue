@@ -76,7 +76,7 @@
 
             <div class="pt-8 border-t border-cantuaria-charcoal/5">
               <button type="submit" class="w-full py-5 md:py-6 bg-cantuaria-oxford text-white font-bold uppercase tracking-[0.3em] text-xs hover:bg-cantuaria-oxford/90 shadow-xl transition-all active:scale-[0.99] flex items-center justify-center gap-4">
-                <LucideSearch class="w-5 h-5" /> Filtrar Acervo
+                <LucideSearch class="w-5 h-5" /> Ver Resultados
               </button>
               <button @click="resetFilters" type="button" class="w-full mt-6 text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 hover:text-cantuaria-crimson">Limpar Critérios</button>
             </div>
@@ -89,14 +89,47 @@
 
 <script setup lang="ts">
 import { Search as LucideSearch } from 'lucide-vue-next'
-const categories = ref<any[]>([]); const filters = ref({ q: '', century: '', language: '', types: [] as string[], categories: [] as string[] })
-const fetchCategories = async () => { categories.value = await $fetch('/api/categories') as any[] }
-const toggleCategory = (slug: string) => { const idx = filters.value.categories.indexOf(slug); if (idx > -1) filters.value.categories.splice(idx, 1); else filters.value.categories.push(slug) }
+import { watchDebounced } from '@vueuse/core'
+
+const categories = ref<any[]>([])
+const filters = ref({ q: '', century: '', language: '', types: [] as string[], categories: [] as string[] })
+
+const fetchCategories = async () => { 
+  try {
+    categories.value = await $fetch('/api/categories') as any[] 
+  } catch (e) {
+    console.error('Erro ao buscar categorias:', e)
+  }
+}
+
+const toggleCategory = (slug: string) => { 
+  const idx = filters.value.categories.indexOf(slug)
+  if (idx > -1) filters.value.categories.splice(idx, 1)
+  else filters.value.categories.push(slug)
+  executeSearch()
+}
+
 const resetFilters = () => { filters.value = { q: '', century: '', language: '', types: [], categories: [] } }
+
 const executeSearch = () => {
-  const query: any = {}; if (filters.value.q) query.q = filters.value.q; if (filters.value.century) query.seculo = filters.value.century; if (filters.value.language) query.idioma = filters.value.language
-  if (filters.value.types.length > 0) query.tipo = filters.value.types.join(','); if (filters.value.categories.length > 0) query.categoria = filters.value.categories.join(',')
+  const query: any = {}
+  if (filters.value.q) query.q = filters.value.q
+  if (filters.value.century) query.seculo = filters.value.century
+  if (filters.value.language) query.idioma = filters.value.language
+  if (filters.value.types.length > 0) query.tipo = filters.value.types.join(',')
+  if (filters.value.categories.length > 0) query.categoria = filters.value.categories.join(',')
   navigateTo({ path: '/biblioteca', query })
 }
+
+// Live search for text input
+watchDebounced(() => filters.value.q, (newQ) => {
+  if (newQ && newQ.length > 2) executeSearch()
+}, { debounce: 800 })
+
+// Live search for selections
+watch(() => filters.value.century, executeSearch)
+watch(() => filters.value.language, executeSearch)
+watch(() => filters.value.types, executeSearch, { deep: true })
+
 onMounted(fetchCategories)
 </script>

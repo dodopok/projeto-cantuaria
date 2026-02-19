@@ -25,21 +25,23 @@
         <!-- Search Bar -->
         <form @submit.prevent="handleSearch" class="max-w-3xl mx-auto relative group">
           <div class="absolute -inset-1 bg-gradient-to-r from-cantuaria-gold/20 to-cantuaria-oxford/20 blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-          <div class="relative bg-white p-2 flex items-center shadow-2xl transition-all">
-            <LucideSearch class="w-6 h-6 ml-6 text-cantuaria-charcoal/30" />
-            <input 
-              v-model="searchQuery"
-              type="text" 
-              placeholder="Busque por títulos, autores ou temas históricos..." 
-              class="w-full px-6 py-5 focus:outline-none text-xl font-serif placeholder:text-cantuaria-charcoal/20 bg-transparent text-cantuaria-oxford"
-            />
-            <button type="submit" class="bg-cantuaria-oxford text-white py-5 px-10 flex items-center gap-3 group/btn transition-all hover:bg-cantuaria-oxford/90 active:scale-95">
-              <span class="text-xs uppercase font-bold tracking-[0.2em]">Explorar</span>
-              <LucideArrowRight class="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
+          <div class="relative bg-white p-1 md:p-2 flex flex-col sm:flex-row items-center shadow-2xl transition-all">
+            <div class="flex items-center w-full px-4 md:px-0">
+              <LucideSearch class="w-5 h-5 md:w-6 md:h-6 md:ml-6 text-cantuaria-charcoal/30 shrink-0" />
+              <input 
+                v-model="searchQuery"
+                type="text" 
+                placeholder="Busque por títulos, autores..." 
+                class="w-full px-4 md:px-6 py-4 md:py-5 focus:outline-none text-base md:text-xl font-serif placeholder:text-cantuaria-charcoal/20 bg-transparent text-cantuaria-oxford"
+              />
+            </div>
+            <button type="submit" class="w-full sm:w-auto bg-cantuaria-oxford text-white py-4 md:py-5 px-8 md:px-10 flex items-center justify-center gap-3 group/btn transition-all hover:bg-cantuaria-oxford/90 active:scale-95 shrink-0">
+              <span class="text-[10px] md:text-xs uppercase font-bold tracking-[0.2em]">Explorar</span>
+              <LucideArrowRight class="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover/btn:translate-x-1" />
             </button>
           </div>
           
-          <div class="mt-6 flex flex-wrap justify-center gap-6 text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold">
+          <div class="mt-6 flex flex-wrap justify-center gap-4 md:gap-6 text-[9px] md:text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold">
             <span @click="quickSearch('Liturgia')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#Liturgia</span>
             <span @click="quickSearch('Teologia')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#Teologia</span>
             <span @click="quickSearch('História')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#História</span>
@@ -54,8 +56,8 @@
       <div class="container mx-auto px-6">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-16 md:gap-8">
           <div v-for="stat in stats" :key="stat.label" class="flex flex-col items-center text-center group">
-            <div class="text-5xl md:text-6xl font-serif text-cantuaria-oxford mb-4 transition-transform group-hover:-translate-y-1">
-              <span v-if="stat.loading" class="animate-pulse opacity-20">---</span>
+            <div class="text-5xl md:text-6xl font-serif text-cantuaria-oxford mb-4 transition-transform group-hover:-translate-y-1 h-[1.2em] flex items-center">
+              <div v-if="stat.loading" class="h-10 w-20 animate-skeleton"></div>
               <span v-else>{{ stat.value }}</span>
             </div>
             <div class="h-px w-8 bg-cantuaria-gold/30 mb-4 transition-all group-hover:w-16"></div>
