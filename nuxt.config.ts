@@ -2,6 +2,9 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
+  future: {
+    compatibilityVersion: 4,
+  },
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxtjs/supabase',
@@ -36,5 +39,11 @@ export default defineNuxtConfig({
   supabase: {
     redirect: false
   },
-  css: ['~/assets/css/main.css']
+  css: ['~/assets/css/main.css'],
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  },
 })
