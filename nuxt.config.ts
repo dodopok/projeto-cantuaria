@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxtjs/supabase',
-    '@vueuse/core'
+    '@vueuse/nuxt'
   ],
   app: {
     head: {
