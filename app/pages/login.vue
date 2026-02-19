@@ -23,7 +23,6 @@
             v-model="email" 
             type="email" 
             required 
-            placeholder="dodopokcamilo@gmail.com"
             class="w-full border-b border-cantuaria-charcoal/10 py-3 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm bg-transparent transition-colors"
           />
         </div>
@@ -62,27 +61,42 @@
 
 <script setup>
 const supabase = useSupabaseClient()
+const user = useSupabaseUser()
 const email = ref('')
 const password = ref('')
 const error = ref(null)
 const loading = ref(false)
+
+// Se já estiver logado, manda pro admin
+onMounted(() => {
+  watchEffect(() => {
+    if (user.value) {
+      navigateTo('/admin')
+    }
+  })
+})
 
 const handleLogin = async () => {
   loading.value = true
   error.value = null
   
   try {
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email: email.value,
       password: password.value
     })
 
-    if (authError) throw authError
+    if (authError) {
+      error.value = 'Falha na autenticação. Verifique suas credenciais.'
+      return
+    }
     
-    // Sucesso - o middleware ou o watch fará o redirecionamento
-    navigateTo('/admin')
+    // Se chegou aqui com data.user, o login foi um sucesso total
+    if (data?.user) {
+      await navigateTo('/admin', { replace: true })
+    }
   } catch (err) {
-    error.value = 'Falha na autenticação. Verifique suas credenciais.'
+    error.value = 'Ocorreu um erro inesperado no sistema.'
   } finally {
     loading.value = false
   }
