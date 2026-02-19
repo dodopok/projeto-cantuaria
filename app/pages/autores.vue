@@ -51,13 +51,13 @@ const loading = ref(true)
 
 const fetchAuthors = async () => {
   loading.value = true
-  const { data, error } = await supabase
-    .from('authors')
-    .select('*')
-    .order('name')
-  
-  if (!error) authors.value = data
-  loading.value = false
+  try {
+    authors.value = await $fetch('/api/authors')
+  } catch (error) {
+    console.error('Erro ao buscar autores:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(fetchAuthors)

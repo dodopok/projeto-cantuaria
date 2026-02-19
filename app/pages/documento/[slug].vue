@@ -141,13 +141,8 @@ const loading = ref(true)
 
 const fetchDocument = async () => {
   loading.value = true
-  const { data, error } = await supabase
-    .from('documents')
-    .select('*, authors(*)')
-    .eq('slug', route.params.slug)
-    .single()
-  
-  if (!error) {
+  try {
+    const data: any = await $fetch(`/api/documents/${route.params.slug}`)
     document.value = data
     
     // SEO Dinâmico
@@ -159,8 +154,11 @@ const fetchDocument = async () => {
       ogImage: data.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000',
       twitterCard: 'summary_large_image',
     })
+  } catch (error) {
+    console.error('Erro ao buscar documento:', error)
+  } finally {
+    loading.value = false
   }
-  loading.value = false
 }
 
 const share = () => {

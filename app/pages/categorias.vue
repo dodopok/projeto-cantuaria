@@ -47,19 +47,18 @@
 <script setup>
 import { Loader2 as LucideLoader2, Library as LucideLibrary, Bookmark as LucideBookmark } from 'lucide-vue-next'
 
-const supabase = useSupabaseClient()
 const categories = ref([])
 const loading = ref(true)
 
 const fetchCategories = async () => {
   loading.value = true
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name')
-  
-  if (!error) categories.value = data
-  loading.value = false
+  try {
+    categories.value = await $fetch('/api/categories')
+  } catch (error) {
+    console.error('Erro ao buscar categorias:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(fetchCategories)
