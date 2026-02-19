@@ -150,15 +150,15 @@
           <footer class="p-8 border-t border-cantuaria-charcoal/5 bg-cantuaria-cream/30 flex justify-between items-center">
             <div class="flex items-center gap-4"><span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">{{ completedCount }} de {{ batchResults.length }} processados</span></div>
             <div class="flex gap-4">
-              <button v-if="!isAnalyzingBatch" @click="closeBatch" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford">Cancelar</button>
-              <button @click="saveBatchResults" :disabled="isAnalyzingBatch || completedCount === 0 || publishingBatch" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50">{{ publishingBatch ? 'Salvando...' : 'Publicar Todos' }}</button>
+              <button v-if="!isAnalyzingBatch" @click="closeBatch" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
+              <button @click="saveBatchResults" :disabled="isAnalyzingBatch || completedCount === 0 || publishingBatch" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all">{{ publishingBatch ? 'Salvando...' : 'Publicar Todos' }}</button>
             </div>
           </footer>
         </div>
       </div>
 
       <!-- Review/Edit Modal -->
-      <div v-if="editingItem && !batchAnalysisActive" class="fixed inset-0 z-[100] bg-cantuaria-oxford/95 backdrop-blur-md flex items-center justify-center p-4">
+      <div v-if="editingItem" class="fixed inset-0 z-[100] bg-cantuaria-oxford/95 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl overflow-hidden relative animate-fade-in">
           <header class="p-6 border-b border-cantuaria-charcoal/5 flex justify-between items-center bg-white">
             <h3 class="font-serif text-2xl text-cantuaria-oxford">Gerenciamento de Documento</h3>
@@ -186,10 +186,20 @@
                   <div @click="($refs.coverInput as HTMLInputElement).click()" class="aspect-[3/4.5] bg-cantuaria-cream/50 border-2 border-dashed border-cantuaria-charcoal/10 flex flex-col items-center justify-center p-4 cursor-pointer hover:border-cantuaria-oxford/30 transition-colors group relative overflow-hidden shadow-inner">
                     <img v-if="editingItem.thumbnail_url" :src="editingItem.thumbnail_url" class="absolute inset-0 w-full h-full object-cover" />
                     <template v-else><LucideImage class="w-8 h-8 text-cantuaria-charcoal/20 group-hover:text-cantuaria-oxford transition-colors mb-2" /><span class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 text-center">Subir Imagem</span></template>
-                    <div v-if="uploadingCover" class="absolute inset-0 bg-white/80 flex items-center justify-center"><LucideLoader2 class="w-6 h-6 animate-spin text-cantuaria-oxford" /></div>
+                    <div v-if="uploadingCover || capturingPdf" class="absolute inset-0 bg-white/80 flex items-center justify-center"><LucideLoader2 class="w-6 h-6 animate-spin text-cantuaria-oxford" /></div>
                     <input ref="coverInput" type="file" class="hidden" @change="handleCoverUpload" accept="image/*" />
                   </div>
-                  <button @click.stop="generateInstitutionalCover" class="w-full mt-4 py-2 border border-cantuaria-gold text-cantuaria-gold text-[8px] uppercase tracking-widest font-bold hover:bg-cantuaria-gold hover:text-white transition-all">Gerar Capa Cantuária</button>
+                  <div class="flex flex-col gap-2 mt-4">
+                    <button @click.stop="generateInstitutionalCover" class="w-full py-2 border border-cantuaria-gold text-cantuaria-gold text-[8px] uppercase tracking-widest font-bold hover:bg-cantuaria-gold hover:text-white transition-all">Gerar Capa Cantuária</button>
+                    <button 
+                      v-if="editingItem.file_url?.toLowerCase().endsWith('.pdf')" 
+                      @click.stop="capturePdfCover" 
+                      :disabled="capturingPdf"
+                      class="w-full py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[8px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50"
+                    >
+                      {{ capturingPdf ? 'Capturando...' : 'Usar 1ª pág como Capa' }}
+                    </button>
+                  </div>
                 </div>
                 <div class="md:col-span-2 space-y-6">
                   <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título Final</label><input type="text" v-model="editingItem.title" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent" /></div>
@@ -217,6 +227,10 @@
 
 <script setup lang="ts">
 import { ShieldCheck as LucideShieldCheck, FileText as LucideFileText, Sparkles as LucideSparkles, X as LucideX, Image as LucideImage, Loader2 as LucideLoader2, CheckCircle as LucideCheckCircle, Trash2 as LucideTrash2 } from 'lucide-vue-next'
+import * as pdfjs from 'pdfjs-dist'
+
+// Configura o worker do PDF.js via CDN para evitar problemas de build local
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
 
 definePageMeta({ middleware: 'admin' })
 
@@ -229,6 +243,7 @@ const editingItem = ref<any>(null)
 const analyzing = ref(false)
 const publishing = ref(false)
 const uploadingCover = ref(false)
+const capturingPdf = ref(false)
 
 const selectedIds = ref<string[]>([])
 const allSelected = computed(() => items.value.length > 0 && selectedIds.value.length === items.value.length)
@@ -239,30 +254,58 @@ const batchResults = ref<any[]>([])
 const completedCount = computed(() => batchResults.value.filter(r => r.status === 'complete').length)
 
 const fetchData = async () => {
-  loading.value = true
-  selectedIds.value = []
+  loading.value = true; selectedIds.value = []
   const { data } = await supabase.from('documents').select('*, authors(name), categories(name), tags(name)').eq('status', currentTab.value).order('created_at', { ascending: false })
   items.value = data?.map(doc => ({ ...doc, authors_list: doc.authors?.map((a: any) => a.name).join(', '), tags_list: doc.tags?.map((t: any) => t.name).join(', '), category_name: doc.categories?.name })) || []
   const { count } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('status', 'pending')
-  pendingCount.value = count || 0
-  loading.value = false
+  pendingCount.value = count || 0; loading.value = false
 }
 
 const toggleAll = () => { selectedIds.value = allSelected.value ? [] : items.value.map(i => i.id) }
 const openReview = (item: any) => { editingItem.value = JSON.parse(JSON.stringify(item)) }
 
 const generateInstitutionalCover = async () => {
-  if (!editingItem.value.title) return
-  uploadingCover.value = true
+  if (!editingItem.value.title) return; uploadingCover.value = true
   try {
-    const { url } = await $fetch('/api/generate-cover', { method: 'POST', body: { title: editingItem.value.title, author: editingItem.value.authors_list?.split(',')[0] } })
+    const { url }: any = await $fetch('/api/generate-cover', { method: 'POST', body: { title: editingItem.value.title, author: editingItem.value.authors_list?.split(',')[0] } })
     editingItem.value.thumbnail_url = url
   } finally { uploadingCover.value = false }
 }
 
+const capturePdfCover = async () => {
+  if (!editingItem.value.file_url) return
+  capturingPdf.value = true
+  try {
+    const loadingTask = pdfjs.getDocument(editingItem.value.file_url)
+    const pdf = await loadingTask.promise
+    const page = await pdf.getPage(1)
+    const viewport = page.getViewport({ scale: 1.5 })
+    
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    canvas.height = viewport.height
+    canvas.width = viewport.width
+    
+    await page.render({ canvasContext: context!, viewport }).promise
+    
+    // Converter canvas para Blob
+    const blob = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/jpeg', 0.8))
+    const fileName = `covers/pdf-capture-${Date.now()}.jpg`
+    
+    const { error } = await supabase.storage.from('covers').upload(fileName, blob)
+    if (error) throw error
+    
+    const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(fileName)
+    editingItem.value.thumbnail_url = publicUrl
+  } catch (err) {
+    alert('Erro ao capturar capa do PDF. Verifique se o arquivo permite acesso (CORS).')
+  } finally {
+    capturingPdf.value = false
+  }
+}
+
 const startBatchAnalysis = async () => {
-  batchAnalysisActive.value = true
-  isAnalyzingBatch.value = true
+  batchAnalysisActive.value = true; isAnalyzingBatch.value = true
   const selectedItems = items.value.filter(i => selectedIds.value.includes(i.id))
   batchResults.value = selectedItems.map(i => ({ id: i.id, originalTitle: i.title, file_url: i.file_url, type: i.type, status: 'processing', data: null, errorMessage: null }))
   const promises = batchResults.value.map(async (res) => {
@@ -292,12 +335,22 @@ const publishItem = async (data: any, id: string) => {
     if (cat) categoryId = (cat as any).id
   }
   await supabase.from('documents').update({ title: data.title, summary: data.summary, publication_year: data.publication_year, language: data.language, thumbnail_url: data.thumbnail_url, category_id: categoryId, status: 'published' }).eq('id', id)
+  
   if (data.authors_list) {
     await supabase.from('document_authors').delete().eq('document_id', id)
     for (const name of data.authors_list.split(',').map((a: string) => a.trim())) {
       const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
       const { data: aut } = await supabase.from('authors').upsert({ name, slug }, { onConflict: 'slug' }).select().single()
       if (aut) await supabase.from('document_authors').insert({ document_id: id, author_id: (aut as any).id })
+    }
+  }
+
+  if (data.tags_list) {
+    await supabase.from('document_tags').delete().eq('document_id', id)
+    for (const name of data.tags_list.split(',').map((t: string) => t.trim())) {
+      const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
+      const { data: tag } = await supabase.from('tags').upsert({ name, slug }, { onConflict: 'slug' }).select().single()
+      if (tag) await supabase.from('document_tags').insert({ document_id: id, tag_id: (tag as any).id })
     }
   }
 }
@@ -323,7 +376,16 @@ const analyzeWithAI = async () => {
   } finally { analyzing.value = false }
 }
 
-const deleteItem = async (item: any) => { if (!confirm('Remover permanentemente?')) return; await supabase.from('documents').delete().eq('id', item.id); await fetchData() }
+const deleteItem = async (item: any) => { 
+  if (!confirm('Remover permanentemente?')) return
+  try {
+    await $fetch(`/api/documents/${item.id}`, { method: 'DELETE' })
+    await fetchData()
+  } catch (err) {
+    alert('Erro ao deletar documento.')
+  }
+}
+
 const logout = async () => { await supabase.auth.signOut(); navigateTo('/login') }
 
 watch(currentTab, fetchData)

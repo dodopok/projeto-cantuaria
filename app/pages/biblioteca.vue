@@ -95,6 +95,7 @@ const documents = ref<any[]>([])
 const loading = ref(true)
 const searchQuery = ref(route.query.q?.toString() || '')
 const filterTypes = ref<string[]>(route.query.tipo ? [route.query.tipo.toString()] : [])
+const filterCategory = ref(route.query.categoria?.toString() || '')
 const page = ref(0)
 const pageSize = 9
 const hasMore = ref(true)
@@ -108,7 +109,8 @@ const fetchDocuments = async (append = false) => {
         page: page.value,
         pageSize,
         q: searchQuery.value,
-        tipo: filterTypes.value[0] || ''
+        tipo: filterTypes.value[0] || '',
+        categoria: filterCategory.value
       }
     })
 

@@ -7,10 +7,11 @@ export default defineEventHandler(async (event) => {
   const search = query.q as string || ''
   const type = query.tipo as string || ''
   const category = query.categoria as string || ''
+  const seculo = query.seculo as string || ''
+  const idioma = query.idioma as string || ''
 
   const adminSupabase = useAdminSupabase()
 
-  // Construção da Query no Servidor
   let dbQuery = adminSupabase
     .from('documents')
     .select('*, authors(*), categories(*)', { count: 'exact' })
@@ -18,21 +19,42 @@ export default defineEventHandler(async (event) => {
     .order('created_at', { ascending: false })
     .range(page * pageSize, (page + 1) * pageSize - 1)
 
+  // Pesquisa de Texto (Full Text Search)
   if (search) {
-    // Busca textual simples ou usando o search_vector se configurado
-    dbQuery = dbQuery.ilike('title', `%${search}%`)
+    dbQuery = dbQuery.textSearch('search_vector', search, { 
+      config: 'portuguese',
+      type: 'websearch'
+    })
   }
 
+  // Filtro de Múltiplos Tipos
   if (type) {
-    dbQuery = dbQuery.eq('type', type)
+    const types = type.split(',')
+    dbQuery = dbQuery.in('type', types)
   }
 
-  if (category) {
-    // Filtra pelo slug da categoria através do join
-    dbQuery = dbQuery.filter('categories.slug', 'eq', category)
+  // Filtro de Idioma
+  if (idioma) {
+    dbQuery = dbQuery.eq('language', idioma)
+  }
+
+  // Filtro de Século
+  if (seculo) {
+    const startYear = parseInt(seculo) * 100 - 100
+    const endYear = parseInt(seculo) * 100 - 1
+    dbQuery = dbQuery.gte('publication_year', startYear).lte('publication_year', endYear)
   }
 
   const { data, count, error } = await dbQuery
+
+  // Filtro de Categoria (necessita ser feito via join ou sub-query se for múltiplo)
+  let filteredData = data
+  if (category && data) {
+    const categoriesSlugs = category.split(',')
+    filteredData = data.filter(doc => 
+      doc.categories && categoriesSlugs.includes(doc.categories.slug)
+    )
+  }
 
   if (error) {
     throw createError({
@@ -42,7 +64,7 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    documents: data,
+    documents: filteredData || [],
     total: count,
     page,
     pageSize,
