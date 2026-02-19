@@ -40,6 +40,16 @@ export default defineNuxtConfig({
     redirect: false
   },
   css: ['~/assets/css/main.css'],
+  vite: {
+    build: {
+      rollupOptions: {
+        external: ['pdfjs-dist']
+      }
+    },
+    optimizeDeps: {
+      include: ['pdfjs-dist']
+    }
+  },
   postcss: {
     plugins: {
       tailwindcss: {},

@@ -118,6 +118,17 @@ const selectedFiles = ref<File[]>([])
 const isDragging = ref(false)
 const currentUploadIndex = ref(0)
 
+const slugify = (text: string) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[^a-z0-9]+/g, '-')     // Substitui caracteres não alfanuméricos por -
+    .replace(/^-+|-+$/g, '')         // Remove dashes do início/fim
+    .replace(/-+/g, '-')             // Remove dashes duplicados
+}
+
 const handleFileSelect = (e: any) => {
   const files = Array.from(e.target.files) as File[]
   addFiles(files)
@@ -186,9 +197,9 @@ const handleSubmit = async () => {
         .from('documents')
         .insert({
           title: provTitle,
-          type: 'Documento', // Default inicial
+          type: 'Documento', 
           file_url: publicUrl,
-          slug: `${provTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString().slice(-4)}`,
+          slug: `${slugify(provTitle)}-${Date.now().toString().slice(-4)}`,
           status: 'pending'
         })
 

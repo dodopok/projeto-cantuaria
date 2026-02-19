@@ -1,64 +1,62 @@
 <template>
   <NuxtLayout>
-    <section class="py-12 border-b border-cantuaria-oxford/5">
-      <div class="container mx-auto px-6">
-        <h1 class="text-4xl md:text-5xl text-cantuaria-oxford mb-4">Categorias do Acervo</h1>
-        <p class="text-cantuaria-charcoal/60 max-w-xl italic font-serif text-lg">
-          Explore o acervo através de grandes eixos temáticos.
+    <section class="py-20 bg-[#002147] text-white relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10 pointer-events-none">
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000')] bg-cover bg-center grayscale"></div>
+      </div>
+      <div class="container mx-auto px-6 relative z-10">
+        <h1 class="text-5xl md:text-6xl font-serif mb-6 leading-tight">Categorias Temáticas</h1>
+        <p class="text-white/60 max-w-2xl font-sans text-lg">
+          Navegue pelo acervo através de grandes eixos temáticos da teologia e prática anglicana.
         </p>
       </div>
     </section>
 
-    <section class="py-20 bg-cantuaria-cream/30 min-h-screen">
+    <section class="py-20 bg-cantuaria-cream min-h-screen">
       <div class="container mx-auto px-6">
         <div v-if="loading" class="py-20 text-center">
           <LucideLoader2 class="w-10 h-10 animate-spin mx-auto text-cantuaria-oxford/20" />
         </div>
 
-        <div v-else-if="categories.length === 0" class="py-20 text-center bg-white border border-cantuaria-charcoal/5">
-          <LucideLibrary class="w-12 h-12 mx-auto mb-4 text-cantuaria-charcoal/10" />
-          <p class="font-serif text-xl text-cantuaria-charcoal/40">Nenhuma categoria cadastrada ainda.</p>
-        </div>
-
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <NuxtLink 
-            v-for="category in categories" 
-            :key="category.id" 
-            :to="`/biblioteca?categoria=${category.slug}`"
-            class="group bg-white p-8 border border-cantuaria-charcoal/5 shadow-sm hover:shadow-xl hover:border-cantuaria-oxford transition-all duration-500"
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div 
+            v-for="cat in categories" 
+            :key="cat.id"
+            @click="goToCategory(cat.slug)"
+            class="bg-white aspect-square flex flex-col items-center justify-center text-center p-8 border border-cantuaria-charcoal/5 shadow-sm group cursor-pointer hover:bg-cantuaria-oxford hover:border-cantuaria-oxford transition-all duration-500"
           >
-            <div class="flex items-center justify-between mb-8">
-              <div class="w-12 h-12 bg-cantuaria-oxford/5 flex items-center justify-center rounded-sm text-cantuaria-oxford group-hover:bg-cantuaria-oxford group-hover:text-white transition-all duration-500">
-                <LucideBookmark class="w-6 h-6" />
-              </div>
-              <span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">Explorar Obras</span>
-            </div>
-            <h3 class="font-serif text-3xl text-cantuaria-oxford mb-4 group-hover:text-cantuaria-crimson transition-colors tracking-tight">{{ category.name }}</h3>
-            <p class="text-sm text-cantuaria-charcoal/60 leading-relaxed line-clamp-2">
-              {{ category.description || 'Nenhuma descrição disponível para esta categoria.' }}
-            </p>
-          </NuxtLink>
+            <LucideBookOpen class="w-10 h-10 text-cantuaria-gold mb-6 transition-transform group-hover:scale-110" />
+            <h3 class="text-xl font-serif text-cantuaria-oxford mb-2 group-hover:text-white transition-colors">{{ cat.name }}</h3>
+            <span class="text-[9px] uppercase tracking-[0.3em] font-bold text-cantuaria-charcoal/30 group-hover:text-cantuaria-gold transition-colors">Explorar Coleção</span>
+          </div>
         </div>
       </div>
     </section>
   </NuxtLayout>
 </template>
 
-<script setup>
-import { Loader2 as LucideLoader2, Library as LucideLibrary, Bookmark as LucideBookmark } from 'lucide-vue-next'
+<script setup lang="ts">
+import { BookOpen as LucideBookOpen, Loader2 as LucideLoader2 } from 'lucide-vue-next'
 
-const categories = ref([])
+const categories = ref<any[]>([])
 const loading = ref(true)
 
 const fetchCategories = async () => {
-  loading.value = true
   try {
-    categories.value = await $fetch('/api/categories')
-  } catch (error) {
-    console.error('Erro ao buscar categorias:', error)
+    const data = await $fetch('/api/categories')
+    categories.value = data as any[]
+  } catch (err) {
+    console.error('Erro ao buscar categorias:', err)
   } finally {
     loading.value = false
   }
+}
+
+const goToCategory = (slug: string) => {
+  navigateTo({
+    path: '/biblioteca',
+    query: { categoria: slug }
+  })
 }
 
 onMounted(fetchCategories)

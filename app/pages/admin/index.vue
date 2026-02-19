@@ -113,7 +113,7 @@
 
           <div class="flex-grow overflow-auto p-8 bg-cantuaria-cream/20">
             <div class="grid grid-cols-1 gap-6">
-              <div v-for="res in batchResults" :key="res.id" class="border border-cantuaria-charcoal/10 p-6 rounded-sm bg-white shadow-sm hover:border-cantuaria-gold/50">
+              <div v-for="res in batchResults" :key="res.id" class="border border-cantuaria-charcoal/10 p-6 rounded-sm bg-white shadow-sm bg-white hover:border-cantuaria-gold/50">
                 <div class="flex flex-col lg:flex-row gap-8">
                   <div class="lg:w-1/4">
                     <div class="flex items-center gap-3 mb-4">
@@ -202,16 +202,20 @@
                   </div>
                 </div>
                 <div class="md:col-span-2 space-y-6">
-                  <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título Final</label><input type="text" v-model="editingItem.title" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent" /></div>
+                  <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título Final</label>
+                    <input type="text" v-model="editingItem.title" @input="updateSlugSuggestion" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent" />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Link Amigável (Slug)</label>
+                    <input type="text" v-model="editingItem.slug" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-oxford text-[10px] font-mono bg-transparent text-cantuaria-charcoal/40" />
+                  </div>
                   <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Autor(es)</label><input type="text" v-model="editingItem.authors_list" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
                   <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano</label><input type="number" v-model="editingItem.publication_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
                     <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Idioma</label><input type="text" v-model="editingItem.language" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
                   </div>
-                  <div class="space-y-2">
-                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label>
-                    <input type="text" v-model="editingItem.category_name" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
-                  </div>
+                  <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label><input type="text" v-model="editingItem.category_name" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
                   <div class="space-y-2">
                     <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tipo de Documento</label>
                     <select v-model="editingItem.type" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent appearance-none">
@@ -241,9 +245,6 @@
 
 <script setup lang="ts">
 import { ShieldCheck as LucideShieldCheck, FileText as LucideFileText, Sparkles as LucideSparkles, X as LucideX, Image as LucideImage, Loader2 as LucideLoader2, CheckCircle as LucideCheckCircle, Trash2 as LucideTrash2 } from 'lucide-vue-next'
-import * as pdfjs from 'pdfjs-dist'
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
 
 definePageMeta({ middleware: 'admin' })
 
@@ -266,6 +267,27 @@ const publishingBatch = ref(false)
 const batchResults = ref<any[]>([])
 const completedCount = computed(() => batchResults.value.filter(r => r.status === 'complete').length)
 
+const slugify = (text: string) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[^a-z0-9]+/g, '-')     // Substitui caracteres não alfanuméricos por -
+    .replace(/^-+|-+$/g, '')         // Remove dashes do início/fim
+    .replace(/-+/g, '-')             // Remove dashes duplicados
+}
+
+const updateSlugSuggestion = () => {
+  if (editingItem.value && editingItem.value.title) {
+    const cleanSlug = slugify(editingItem.value.title)
+    // Só atualiza se o slug original for muito curto ou baseado no filename antigo
+    if (!editingItem.value.slug || editingItem.value.slug.length < 5) {
+      editingItem.value.slug = `${cleanSlug}-${Math.random().toString(36).slice(-4)}`
+    }
+  }
+}
+
 const fetchData = async () => {
   loading.value = true; selectedIds.value = []
   const { data } = await supabase.from('documents').select('*, authors(name), categories(name), tags(name)').eq('status', currentTab.value).order('created_at', { ascending: false })
@@ -286,12 +308,20 @@ const generateInstitutionalCover = async () => {
 }
 
 const capturePdfCover = async () => {
-  if (!editingItem.value.file_url) return; capturingPdf.value = true
+  if (!editingItem.value.file_url || !process.client) return; 
+  capturingPdf.value = true
   try {
-    const loadingTask = pdfjs.getDocument(editingItem.value.file_url)
+    const pdfjs = await import('pdfjs-dist')
+    // Usando unpkg que é mais confiável para versões específicas do NPM
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+
+    const loadingTask = pdfjs.getDocument({
+      url: editingItem.value.file_url,
+      disableFontFace: true // Evita erros de fonte no renderizador
+    })
     const pdf = await loadingTask.promise
     const page = await pdf.getPage(1)
-    const viewport = page.getViewport({ scale: 1.5 })
+    const viewport = page.getViewport({ scale: 1.0 })
     const canvas = document.createElement('canvas'); const context = canvas.getContext('2d')
     canvas.height = viewport.height; canvas.width = viewport.width
     await page.render({ canvasContext: context!, viewport }).promise
@@ -320,7 +350,11 @@ const startBatchAnalysis = async () => {
 const saveBatchResults = async () => {
   publishingBatch.value = true
   try {
-    for (const res of batchResults.value.filter(r => r.status === 'complete')) { await publishItem(res.data, res.id) }
+    for (const res of batchResults.value.filter(r => r.status === 'complete')) { 
+      // Para o lote, gera slugs limpos automaticamente
+      res.data.slug = `${slugify(res.data.title)}-${Math.random().toString(36).slice(-4)}`
+      await publishItem(res.data, res.id) 
+    }
     closeBatch(); await fetchData()
   } finally { publishingBatch.value = false }
 }
@@ -330,17 +364,31 @@ const closeBatch = () => { batchAnalysisActive.value = false; batchResults.value
 const publishItem = async (data: any, id: string) => {
   let categoryId = null
   if (data.category_name) {
-    const slug = data.category_name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
-    const { data: cat } = await supabase.from('categories').upsert({ name: data.category_name, slug }, { onConflict: 'slug' }).select().single()
+    const catSlug = slugify(data.category_name)
+    const { data: cat } = await supabase.from('categories').upsert({ name: data.category_name, slug: catSlug }, { onConflict: 'slug' }).select().single()
     if (cat) categoryId = (cat as any).id
   }
-  await supabase.from('documents').update({ title: data.title, type: data.type || 'Documento', summary: data.summary, publication_year: data.publication_year, language: data.language, thumbnail_url: data.thumbnail_url, category_id: categoryId, status: 'published' }).eq('id', id)
+
+  // Se não houver slug nos dados (manual), gera um
+  const finalSlug = data.slug || `${slugify(data.title)}-${id.slice(-4)}`
+
+  await supabase.from('documents').update({ 
+    title: data.title, 
+    slug: finalSlug,
+    type: data.type || 'Documento', 
+    summary: data.summary, 
+    publication_year: data.publication_year, 
+    language: data.language, 
+    thumbnail_url: data.thumbnail_url, 
+    category_id: categoryId, 
+    status: 'published' 
+  }).eq('id', id)
   
   if (data.authors_list) {
     await supabase.from('document_authors').delete().eq('document_id', id)
     for (const name of data.authors_list.split(',').map((a: string) => a.trim())) {
-      const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
-      const { data: aut } = await supabase.from('authors').upsert({ name, slug }, { onConflict: 'slug' }).select().single()
+      const autSlug = slugify(name)
+      const { data: aut } = await supabase.from('authors').upsert({ name, slug: autSlug }, { onConflict: 'slug' }).select().single()
       if (aut) await supabase.from('document_authors').insert({ document_id: id, author_id: (aut as any).id })
     }
   }
@@ -348,8 +396,8 @@ const publishItem = async (data: any, id: string) => {
   if (data.tags_list) {
     await supabase.from('document_tags').delete().eq('document_id', id)
     for (const name of data.tags_list.split(',').map((t: string) => t.trim())) {
-      const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/ /g, '-')
-      const { data: tag } = await supabase.from('tags').upsert({ name, slug }, { onConflict: 'slug' }).select().single()
+      const tagSlug = slugify(name)
+      const { data: tag } = await supabase.from('tags').upsert({ name, slug: tagSlug }, { onConflict: 'slug' }).select().single()
       if (tag) await supabase.from('document_tags').insert({ document_id: id, tag_id: (tag as any).id })
     }
   }
@@ -373,6 +421,7 @@ const analyzeWithAI = async () => {
   try {
     const analysis: any = await $fetch('/api/analyze', { method: 'POST', body: { documentId: editingItem.value.id, fileUrl: editingItem.value.file_url, filename: editingItem.value.title } })
     editingItem.value = { ...editingItem.value, ...analysis }
+    updateSlugSuggestion()
   } finally { analyzing.value = false }
 }
 
