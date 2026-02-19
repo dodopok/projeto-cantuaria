@@ -1,94 +1,97 @@
 <template>
   <NuxtLayout>
     <!-- Hero Section -->
-    <section class="relative min-h-[90vh] flex items-center justify-center overflow-hidden py-20">
-      <div class="absolute inset-0 z-0 pointer-events-none opacity-5">
-        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000')] bg-cover bg-center grayscale scale-110 blur-sm"></div>
+    <section class="relative min-h-[95vh] flex items-center justify-center overflow-hidden py-20 bg-[#001529]">
+      <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000')] bg-cover bg-center grayscale opacity-20 scale-110 blur-[2px] transition-transform duration-[10s] ease-out hover:scale-100"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#001529]/50 to-[#001529]"></div>
       </div>
 
       <div class="container mx-auto px-6 relative z-10 text-center">
-        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-cantuaria-oxford/5 border border-cantuaria-oxford/10 mb-8 animate-fade-in">
-          <span class="w-1.5 h-1.5 rounded-full bg-cantuaria-gold animate-pulse"></span>
-          <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-oxford/70">O acervo digital da memória anglicana</span>
+        <div class="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/10 mb-10 animate-fade-in backdrop-blur-sm">
+          <span class="w-2 h-2 rounded-full bg-cantuaria-gold animate-pulse"></span>
+          <span class="text-[10px] uppercase tracking-[0.3em] font-bold text-white/80">Preservando o Legado Anglicano</span>
         </div>
         
-        <h1 class="text-5xl md:text-7xl lg:text-8xl font-serif text-cantuaria-oxford mb-8 leading-tight tracking-tight">
-          Preservando a <br />
-          <span class="serif-italic italic">Tradição Anglicana</span>
+        <h1 class="text-6xl md:text-8xl lg:text-9xl font-serif text-white mb-8 leading-[0.9] tracking-tighter">
+          Biblioteca <br />
+          <span class="serif-italic italic text-cantuaria-gold">Digital</span>
         </h1>
         
-        <p class="text-lg md:text-xl text-cantuaria-charcoal/70 max-w-2xl mx-auto mb-12 font-sans leading-relaxed">
-          Explore uma vasta coleção de documentos, livros, artigos e memórias da Igreja Una, Santa, Católica e Apostólica em seu ramo anglicano.
+        <p class="text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-16 font-sans leading-relaxed font-light">
+          Um repositório centralizado para a produção intelectual, litúrgica e histórica da tradição anglicana em língua portuguesa.
         </p>
 
         <!-- Search Bar -->
         <form @submit.prevent="handleSearch" class="max-w-3xl mx-auto relative group">
-          <div class="absolute inset-0 bg-cantuaria-oxford/5 blur-2xl group-hover:bg-cantuaria-oxford/10 transition-all"></div>
-          <div class="relative bg-white border border-cantuaria-charcoal/10 p-2 flex items-center shadow-xl group-focus-within:border-cantuaria-oxford transition-all">
-            <LucideSearch class="w-6 h-6 ml-4 text-cantuaria-charcoal/40" />
+          <div class="absolute -inset-1 bg-gradient-to-r from-cantuaria-gold/20 to-cantuaria-oxford/20 blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+          <div class="relative bg-white p-2 flex items-center shadow-2xl transition-all">
+            <LucideSearch class="w-6 h-6 ml-6 text-cantuaria-charcoal/30" />
             <input 
               v-model="searchQuery"
               type="text" 
-              placeholder="Pesquise por títulos, autores, séculos ou temas..." 
-              class="w-full px-4 py-4 focus:outline-none text-lg font-sans placeholder:text-cantuaria-charcoal/30 bg-transparent"
+              placeholder="Busque por títulos, autores ou temas históricos..." 
+              class="w-full px-6 py-5 focus:outline-none text-xl font-serif placeholder:text-cantuaria-charcoal/20 bg-transparent text-cantuaria-oxford"
             />
-            <button type="submit" class="btn-primary py-4 px-8 flex items-center gap-2 group/btn">
-              <span>Explorar</span>
-              <LucideArrowRight class="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+            <button type="submit" class="bg-cantuaria-oxford text-white py-5 px-10 flex items-center gap-3 group/btn transition-all hover:bg-cantuaria-oxford/90 active:scale-95">
+              <span class="text-xs uppercase font-bold tracking-[0.2em]">Explorar</span>
+              <LucideArrowRight class="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
             </button>
           </div>
-          <div class="mt-4 flex flex-wrap justify-center gap-4 text-sm text-cantuaria-charcoal/40 uppercase tracking-widest font-bold">
-            <span @click="quickSearch('Liturgia')" class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Liturgia</span>
-            <span @click="quickSearch('Teologia')" class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Teologia</span>
-            <span @click="quickSearch('História')" class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#História</span>
-            <span @click="quickSearch('Patrística')" class="cursor-pointer hover:text-cantuaria-oxford transition-colors">#Patrística</span>
+          
+          <div class="mt-6 flex flex-wrap justify-center gap-6 text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold">
+            <span @click="quickSearch('Liturgia')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#Liturgia</span>
+            <span @click="quickSearch('Teologia')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#Teologia</span>
+            <span @click="quickSearch('História')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#História</span>
+            <span @click="quickSearch('Patrística')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#Patrística</span>
           </div>
         </form>
       </div>
     </section>
 
-    <!-- Featured Categories -->
-    <section class="py-24 bg-cantuaria-oxford/5 border-y border-cantuaria-oxford/5">
+    <!-- Stats Section -->
+    <section class="py-24 bg-cantuaria-cream border-b border-cantuaria-oxford/5">
       <div class="container mx-auto px-6">
-        <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-          <div class="max-w-xl">
-            <h2 class="text-4xl md:text-5xl text-cantuaria-oxford mb-4">Coleções Destacadas</h2>
-            <p class="text-cantuaria-charcoal/60 leading-relaxed italic font-serif text-lg">
-              "As Escrituras contêm todas as coisas necessárias para a salvação."
-            </p>
-          </div>
-          <NuxtLink to="/biblioteca" class="text-sm font-bold uppercase tracking-widest text-cantuaria-oxford hover:text-cantuaria-crimson transition-colors flex items-center gap-2 group">
-            Ver Todo Acervo
-            <LucideArrowUpRight class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-          </NuxtLink>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <NuxtLink v-for="collection in featuredCollections" :key="collection.id" :to="`/biblioteca?tipo=${collection.type}`" class="group cursor-pointer">
-            <div class="relative aspect-[3/4] overflow-hidden mb-6 bg-cantuaria-charcoal">
-              <img :src="collection.image" :alt="collection.title" class="w-full h-full object-cover opacity-80 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700" />
-              <div class="absolute inset-0 bg-gradient-to-t from-cantuaria-charcoal/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
-              <div class="absolute bottom-6 left-6 text-white">
-                <span class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-70 mb-2 block">{{ collection.category }}</span>
-                <h3 class="text-2xl font-serif tracking-tight leading-tight">{{ collection.title }}</h3>
-              </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-16 md:gap-8">
+          <div v-for="stat in stats" :key="stat.label" class="flex flex-col items-center text-center group">
+            <div class="text-5xl md:text-6xl font-serif text-cantuaria-oxford mb-4 transition-transform group-hover:-translate-y-1">
+              <span v-if="stat.loading" class="animate-pulse opacity-20">---</span>
+              <span v-else>{{ stat.value }}</span>
             </div>
-          </NuxtLink>
+            <div class="h-px w-8 bg-cantuaria-gold/30 mb-4 transition-all group-hover:w-16"></div>
+            <div class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-charcoal/40 group-hover:text-cantuaria-gold transition-colors">{{ stat.label }}</div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Stats Section -->
-    <section class="py-20 border-b border-cantuaria-oxford/5">
+    <!-- Featured Collections -->
+    <section class="py-32 bg-white">
       <div class="container mx-auto px-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-          <div v-for="stat in stats" :key="stat.label">
-            <div class="text-4xl font-serif text-cantuaria-oxford mb-2">
-              <span v-if="stat.loading" class="animate-pulse opacity-20">---</span>
-              <span v-else>{{ stat.value }}</span>
-            </div>
-            <div class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">{{ stat.label }}</div>
+        <div class="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+          <div class="max-w-2xl">
+            <h2 class="text-5xl md:text-6xl text-cantuaria-oxford mb-6 leading-tight">Coleções Curadas</h2>
+            <p class="text-cantuaria-charcoal/50 leading-relaxed font-serif text-xl italic">
+              "Buscai primeiro o Reino de Deus e a sua justiça, e todas as coisas vos serão acrescentadas."
+            </p>
           </div>
+          <NuxtLink to="/biblioteca" class="group flex items-center gap-4 text-xs font-bold uppercase tracking-[0.3em] text-cantuaria-oxford hover:text-cantuaria-gold transition-all">
+            Ver Acervo Completo
+            <div class="w-10 h-10 border border-cantuaria-oxford/10 rounded-full flex items-center justify-center group-hover:border-cantuaria-gold transition-all">
+              <LucideArrowUpRight class="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+          </NuxtLink>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <NuxtLink v-for="collection in featuredCollections" :key="collection.id" :to="`/biblioteca?tipo=${collection.type}`" class="group block relative aspect-[3/4] overflow-hidden bg-cantuaria-oxford">
+            <img :src="collection.image" :alt="collection.title" class="absolute inset-0 w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:scale-110 group-hover:opacity-100 transition-all duration-[1.5s] ease-out" />
+            <div class="absolute inset-0 bg-gradient-to-t from-cantuaria-oxford via-transparent to-transparent opacity-80 group-hover:opacity-40 transition-opacity"></div>
+            <div class="absolute bottom-10 left-10 right-10">
+              <span class="text-[9px] uppercase tracking-[0.3em] font-bold text-cantuaria-gold mb-3 block transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-100">{{ collection.category }}</span>
+              <h3 class="text-3xl font-serif text-white leading-tight tracking-tight transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-200">{{ collection.title }}</h3>
+            </div>
+          </NuxtLink>
         </div>
       </div>
     </section>
@@ -103,24 +106,28 @@ const searchQuery = ref('')
 
 const stats = ref([
   { label: 'Obras Catalogadas', value: '0', loading: true },
-  { label: 'Autores', value: '0', loading: true },
-  { label: 'Categorias', value: '0', loading: true },
+  { label: 'Autores & Tradutores', value: '0', loading: true },
+  { label: 'Categorias Temáticas', value: '0', loading: true },
   { label: 'Anos de História', value: '500+', loading: false }
 ])
 
 const fetchStats = async () => {
-  const [docs, authors, cats] = await Promise.all([
-    supabase.from('documents').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-    supabase.from('authors').select('*', { count: 'exact', head: true }),
-    supabase.from('categories').select('*', { count: 'exact', head: true })
-  ])
+  try {
+    const [docs, authors, cats] = await Promise.all([
+      supabase.from('documents').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+      supabase.from('authors').select('*', { count: 'exact', head: true }),
+      supabase.from('categories').select('*', { count: 'exact', head: true })
+    ])
 
-  stats.value[0].value = docs.count?.toString() || '0'
-  stats.value[0].loading = false
-  stats.value[1].value = authors.count?.toString() || '0'
-  stats.value[1].loading = false
-  stats.value[2].value = cats.count?.toString() || '0'
-  stats.value[2].loading = false
+    stats.value[0].value = docs.count?.toString() || '0'
+    stats.value[0].loading = false
+    stats.value[1].value = authors.count?.toString() || '0'
+    stats.value[1].loading = false
+    stats.value[2].value = cats.count?.toString() || '0'
+    stats.value[2].loading = false
+  } catch (e) {
+    console.error('Erro ao carregar estatísticas:', e)
+  }
 }
 
 const handleSearch = () => {
@@ -160,21 +167,11 @@ onMounted(fetchStats)
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
+@keyframes hero-fade-in {
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in {
-  animation: fade-in 1s ease-out forwards;
-}
-</style>
-
-<style scoped>
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fade-in 1s ease-out forwards;
+  animation: hero-fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 </style>

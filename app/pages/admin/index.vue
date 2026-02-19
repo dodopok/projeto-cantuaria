@@ -113,7 +113,7 @@
 
           <div class="flex-grow overflow-auto p-8 bg-cantuaria-cream/20">
             <div class="grid grid-cols-1 gap-6">
-              <div v-for="res in batchResults" :key="res.id" class="border border-cantuaria-charcoal/10 p-6 rounded-sm bg-white shadow-sm bg-white hover:border-cantuaria-gold/50">
+              <div v-for="res in batchResults" :key="res.id" class="border border-cantuaria-charcoal/10 p-6 rounded-sm bg-white shadow-sm hover:border-cantuaria-gold/50">
                 <div class="flex flex-col lg:flex-row gap-8">
                   <div class="lg:w-1/4">
                     <div class="flex items-center gap-3 mb-4">
@@ -208,7 +208,21 @@
                     <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano</label><input type="number" v-model="editingItem.publication_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
                     <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Idioma</label><input type="text" v-model="editingItem.language" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
                   </div>
-                  <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label><input type="text" v-model="editingItem.category_name" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" /></div>
+                  <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Categoria</label>
+                    <input type="text" v-model="editingItem.category_name" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tipo de Documento</label>
+                    <select v-model="editingItem.type" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent appearance-none">
+                      <option value="Livro">Livro</option>
+                      <option value="Artigo">Artigo</option>
+                      <option value="LOC">Liturgia (LOC)</option>
+                      <option value="Revista">Revista</option>
+                      <option value="Foto">Foto</option>
+                      <option value="Documento">Documento Histórico</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Resumo</label><textarea rows="6" v-model="editingItem.summary" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed bg-cantuaria-cream/10"></textarea></div>
@@ -229,7 +243,6 @@
 import { ShieldCheck as LucideShieldCheck, FileText as LucideFileText, Sparkles as LucideSparkles, X as LucideX, Image as LucideImage, Loader2 as LucideLoader2, CheckCircle as LucideCheckCircle, Trash2 as LucideTrash2 } from 'lucide-vue-next'
 import * as pdfjs from 'pdfjs-dist'
 
-// Configura o worker do PDF.js via CDN para evitar problemas de build local
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
 
 definePageMeta({ middleware: 'admin' })
@@ -273,35 +286,22 @@ const generateInstitutionalCover = async () => {
 }
 
 const capturePdfCover = async () => {
-  if (!editingItem.value.file_url) return
-  capturingPdf.value = true
+  if (!editingItem.value.file_url) return; capturingPdf.value = true
   try {
     const loadingTask = pdfjs.getDocument(editingItem.value.file_url)
     const pdf = await loadingTask.promise
     const page = await pdf.getPage(1)
     const viewport = page.getViewport({ scale: 1.5 })
-    
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')
-    canvas.height = viewport.height
-    canvas.width = viewport.width
-    
+    const canvas = document.createElement('canvas'); const context = canvas.getContext('2d')
+    canvas.height = viewport.height; canvas.width = viewport.width
     await page.render({ canvasContext: context!, viewport }).promise
-    
-    // Converter canvas para Blob
     const blob = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/jpeg', 0.8))
     const fileName = `covers/pdf-capture-${Date.now()}.jpg`
-    
     const { error } = await supabase.storage.from('covers').upload(fileName, blob)
     if (error) throw error
-    
     const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(fileName)
     editingItem.value.thumbnail_url = publicUrl
-  } catch (err) {
-    alert('Erro ao capturar capa do PDF. Verifique se o arquivo permite acesso (CORS).')
-  } finally {
-    capturingPdf.value = false
-  }
+  } catch (err) { alert('Erro na captura. Verifique o acesso CORS do arquivo.') } finally { capturingPdf.value = false }
 }
 
 const startBatchAnalysis = async () => {
@@ -334,7 +334,7 @@ const publishItem = async (data: any, id: string) => {
     const { data: cat } = await supabase.from('categories').upsert({ name: data.category_name, slug }, { onConflict: 'slug' }).select().single()
     if (cat) categoryId = (cat as any).id
   }
-  await supabase.from('documents').update({ title: data.title, summary: data.summary, publication_year: data.publication_year, language: data.language, thumbnail_url: data.thumbnail_url, category_id: categoryId, status: 'published' }).eq('id', id)
+  await supabase.from('documents').update({ title: data.title, type: data.type || 'Documento', summary: data.summary, publication_year: data.publication_year, language: data.language, thumbnail_url: data.thumbnail_url, category_id: categoryId, status: 'published' }).eq('id', id)
   
   if (data.authors_list) {
     await supabase.from('document_authors').delete().eq('document_id', id)
@@ -378,12 +378,7 @@ const analyzeWithAI = async () => {
 
 const deleteItem = async (item: any) => { 
   if (!confirm('Remover permanentemente?')) return
-  try {
-    await $fetch(`/api/documents/${item.id}`, { method: 'DELETE' })
-    await fetchData()
-  } catch (err) {
-    alert('Erro ao deletar documento.')
-  }
+  try { await $fetch(`/api/documents/${item.id}`, { method: 'DELETE' }); await fetchData() } catch (err) { alert('Erro ao deletar documento.') }
 }
 
 const logout = async () => { await supabase.auth.signOut(); navigateTo('/login') }
