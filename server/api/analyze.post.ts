@@ -1,64 +1,70 @@
 import { defineEventHandler, readBody, createError } from 'h3'
-import { createRequire } from 'module'
+import { extractText } from 'unpdf'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { filename, documentId, fileUrl } = body
   const config = useRuntimeConfig()
   
-  const _require = createRequire(import.meta.url)
-  let pdfParser: any
-  
-  try {
-    const pdfLib = _require('pdf-parse')
-    pdfParser = pdfLib.default || pdfLib
-    if (typeof pdfParser !== 'function' && typeof pdfLib === 'object') {
-      pdfParser = Object.values(pdfLib).find(v => typeof v === 'function')
-    }
-  } catch (e) {
-    console.error('Falha ao carregar pdf-parse:', e)
-  }
-
   const PERPLEXITY_API_KEY = config.perplexityApiKey || process.env.PERPLEXITY_API_KEY
 
   if (!PERPLEXITY_API_KEY) {
     throw createError({ statusCode: 500, statusMessage: 'API Key do Perplexity não configurada.' })
   }
 
-  let extractedText = ''
+  let extractedText: string = ''
 
   try {
     if (fileUrl && fileUrl.toLowerCase().endsWith('.pdf')) {
+      console.log(`[IA] Baixando arquivo para extração: ${filename}`)
       const response = await $fetch.raw(fileUrl)
       const arrayBuffer = await (response._data as any).arrayBuffer()
-      const buffer = Buffer.from(arrayBuffer)
       
-      if (typeof pdfParser === 'function') {
-        const data = await pdfParser(buffer)
-        extractedText = data.text || ''
+      try {
+        const result = await extractText(arrayBuffer)
+        // Garante que o texto seja uma string, tratando arrays ou objetos inesperados
+        extractedText = typeof result.text === 'string' ? result.text : String(result.text || '')
+        console.log(`[IA] Texto extraído com sucesso (${extractedText.length} caracteres)`)
+      } catch (pdfError: any) {
+        console.error('[IA] Erro na biblioteca unpdf:', pdfError)
+        extractedText = ''
       }
     }
 
-    if (!extractedText || extractedText.length < 10) {
-      extractedText = `Título provisório: ${filename}. (Extração falhou ou PDF é imagem)`
-    }
+    // Se falhou ou não é PDF, usa fallback
+    const textForIA = extractedText && extractedText.length > 10 
+      ? extractedText 
+      : `(Texto não extraível. Nome do arquivo: ${filename})`
 
     const prompt = `
-      Analise este documento para a biblioteca "Projeto Cantuária".
-      Extraia estritamente em JSON:
+      CONTEXTO FUNDAMENTAL:
+      Você está analisando um arquivo para a biblioteca "Projeto Cantuária".
+      NOME DO ARQUIVO: "${filename}"
+      
+      CONTEÚDO EXTRAÍDO (FONTE ÚNICA):
+      --- INÍCIO ---
+      ${textForIA.substring(0, 12000)}
+      --- FIM ---
+
+      TAREFA:
+      Extraia os metadados no formato JSON:
       {
-        "title": "Título",
-        "authors": ["Autor"],
+        "title": "Título exato",
+        "authors": ["Autor Completo"],
         "category": "Categoria única",
         "tags": ["Tag1"],
-        "summary": "Resumo detalhado de 2 parágrafos",
-        "publication_year": 1662,
+        "summary": "Resumo de 2-3 parágrafos",
+        "publication_year": 2024,
         "language": "Português"
       }
-      
-      Conteúdo extraído: ${extractedText.substring(0, 8000)}
+
+      REGRAS:
+      1. Responda APENAS JSON.
+      2. NUNCA use citações [n].
+      3. Se o conteúdo for apenas o nome do arquivo, tente deduzir o título, mas seja honesto no resumo se não houver dados.
     `
 
+    console.log(`[IA] Enviando para Perplexity...`)
     const aiResponse: any = await $fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -68,7 +74,7 @@ export default defineEventHandler(async (event) => {
       body: {
         model: 'sonar',
         messages: [
-          { role: 'system', content: 'Você é um bibliotecário anglicano especializado. Responda apenas com JSON puro, sem citações [n] e sem markdown.' },
+          { role: 'system', content: 'Você é um bibliotecário acadêmico anglicano infalível.' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.1
@@ -89,10 +95,10 @@ export default defineEventHandler(async (event) => {
       category_name: clean(analysis.category),
       publication_year: analysis.publication_year,
       language: analysis.language,
-      extracted_content: extractedText.substring(0, 10000)
+      extracted_content: String(extractedText).substring(0, 15000)
     }
   } catch (error: any) {
-    console.error('Erro na análise:', error)
+    console.error('[IA] Erro na análise:', error)
     throw createError({ statusCode: 500, statusMessage: error.message })
   }
 })
