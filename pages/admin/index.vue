@@ -151,6 +151,10 @@ import {
   X as LucideX 
 } from 'lucide-vue-next'
 
+definePageMeta({
+  middleware: 'admin'
+})
+
 const analyzing = ref(null)
 const aiResult = ref(null)
 
