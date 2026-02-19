@@ -19,37 +19,36 @@
         
         <!-- Sidebar Filters -->
         <aside class="w-full lg:w-64 space-y-8 shrink-0">
-          <!-- Mobile Toggle for Filters -->
+          <!-- Search Block - Always visible -->
+          <div class="bg-white p-6 border border-cantuaria-charcoal/5 shadow-sm">
+            <h3 class="font-serif text-lg text-cantuaria-oxford mb-6 border-b border-cantuaria-oxford/10 pb-2">Pesquisa</h3>
+            <div class="relative">
+              <input 
+                v-model="searchQuery"
+                type="text" 
+                placeholder="Título, autor..." 
+                class="w-full pl-10 pr-4 py-2 bg-cantuaria-cream/30 border border-cantuaria-charcoal/10 text-xs focus:outline-none focus:border-cantuaria-oxford"
+              />
+              <LucideSearch class="w-4 h-4 absolute left-3 top-2.5 text-cantuaria-charcoal/30" />
+            </div>
+            
+            <NuxtLink to="/pesquisa" class="block text-center mt-6 text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">
+              Pesquisa Avançada
+            </NuxtLink>
+          </div>
+
+          <!-- Mobile Toggle for Additional Filters -->
           <button @click="showMobileFilters = !showMobileFilters" class="lg:hidden w-full py-3 bg-white border border-cantuaria-oxford/10 text-cantuaria-oxford text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-2">
             <LucideFilter class="w-4 h-4" />
             {{ showMobileFilters ? 'Ocultar Filtros' : 'Mostrar Filtros' }}
           </button>
 
           <div :class="['space-y-10 lg:block', showMobileFilters ? 'block' : 'hidden']">
-            <div class="bg-white p-6 border border-cantuaria-charcoal/5 shadow-sm">
-              <h3 class="font-serif text-lg text-cantuaria-oxford mb-6 border-b border-cantuaria-oxford/10 pb-2">Pesquisa</h3>
-              <div class="relative">
-                <input 
-                  v-model="searchQuery"
-                  type="text" 
-                  placeholder="Título, autor..." 
-                  @keyup.enter="handleSearch"
-                  class="w-full pl-10 pr-4 py-2 bg-cantuaria-cream/30 border border-cantuaria-charcoal/10 text-xs focus:outline-none focus:border-cantuaria-oxford"
-                />
-                <LucideSearch class="w-4 h-4 absolute left-3 top-2.5 text-cantuaria-charcoal/30" />
-              </div>
-              <button @click="handleSearch" class="w-full mt-4 py-2 bg-cantuaria-oxford text-white text-[10px] uppercase font-bold tracking-widest hover:bg-cantuaria-oxford/90 transition-colors">Filtrar</button>
-              
-              <NuxtLink to="/pesquisa" class="block text-center mt-6 text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">
-                Pesquisa Avançada
-              </NuxtLink>
-            </div>
-
             <div>
               <h3 class="font-serif text-lg text-cantuaria-oxford mb-6 border-b border-cantuaria-oxford/10 pb-2">Tipo de Obra</h3>
               <div class="grid grid-cols-2 lg:grid-cols-1 gap-3">
                 <label v-for="type in ['Livro', 'Artigo', 'LOC', 'Documento']" :key="type" class="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" :value="type" v-model="filterTypes" @change="handleSearch" class="w-4 h-4 border-cantuaria-charcoal/20 text-cantuaria-oxford focus:ring-cantuaria-oxford" />
+                  <input type="checkbox" :value="type" v-model="filterTypes" class="w-4 h-4 border-cantuaria-charcoal/20 text-cantuaria-oxford focus:ring-cantuaria-oxford" />
                   <span class="text-sm text-cantuaria-charcoal/60 group-hover:text-cantuaria-oxford transition-colors uppercase tracking-widest text-[10px] font-bold">{{ type }}</span>
                 </label>
               </div>
@@ -101,8 +100,10 @@ import {
   BookX as LucideBookX,
   Filter as LucideFilter
 } from 'lucide-vue-next'
+import { watchDebounced } from '@vueuse/core'
 
 const route = useRoute()
+const router = useRouter()
 const documents = ref<any[]>([])
 const loading = ref(true)
 const showMobileFilters = ref(false)
@@ -138,12 +139,11 @@ const fetchDocuments = async (append = false) => {
 const handleSearch = () => {
   page.value = 0
   fetchDocuments(false)
-  const query: any = {}
-  if (searchQuery.value) query.q = searchQuery.value
-  if (filterTypes.value.length > 0) query.tipo = filterTypes.value.join(',')
-  if (filterCategory.value) query.categoria = filterCategory.value
-  useRouter().push({ query })
-  if (window.innerWidth < 1024) showMobileFilters.value = false
+  const query: any = { ...route.query }
+  if (searchQuery.value) query.q = searchQuery.value; else delete query.q
+  if (filterTypes.value.length > 0) query.tipo = filterTypes.value.join(','); else delete query.tipo
+  if (filterCategory.value) query.categoria = filterCategory.value; else delete query.categoria
+  router.replace({ query })
 }
 
 const loadMore = () => { page.value++; fetchDocuments(true) }
@@ -153,6 +153,22 @@ const formatDoc = (doc: any) => ({
   thumbnail_url: doc.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'
 })
 
+// Live search for text input
+watchDebounced(searchQuery, () => {
+  handleSearch()
+}, { debounce: 500 })
+
+// Live search for filters
+watch(filterTypes, () => {
+  handleSearch()
+}, { deep: true })
+
 onMounted(() => { fetchDocuments() })
-watch(() => route.query.q, (newQ) => { if (newQ !== searchQuery.value) { searchQuery.value = newQ?.toString() || ''; handleSearch() } })
+
+watch(() => route.query.q, (newQ) => { 
+  if (newQ !== searchQuery.value) { 
+    searchQuery.value = newQ?.toString() || ''; 
+    // fetchDocuments already called by watchDebounced if searchQuery changes
+  } 
+})
 </script>
