@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout>
-    <section class="py-20 bg-cantuaria-oxford text-white overflow-hidden relative">
+    <section ref="topRef" class="py-20 bg-cantuaria-oxford text-white overflow-hidden relative">
       <div class="absolute inset-0 opacity-10 pointer-events-none">
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000')] bg-cover bg-center grayscale scale-110"></div>
       </div>
@@ -51,13 +51,13 @@
           </div>
 
           <!-- Selected Files List -->
-          <div v-if="selectedFiles.length > 0" class="mt-12 space-y-4 animate-fade-in">
+          <div v-if="selectedFiles.length > 0" id="file-list" ref="listRef" class="mt-12 space-y-4 animate-fade-in">
             <div class="flex justify-between items-center mb-6">
               <h4 class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">Arquivos Selecionados ({{ selectedFiles.length }})</h4>
               <button @click="selectedFiles = []" class="text-[10px] uppercase font-bold text-cantuaria-crimson hover:underline">Limpar Tudo</button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               <div v-for="(file, idx) in selectedFiles" :key="idx" class="flex items-center justify-between p-4 bg-white border border-cantuaria-charcoal/5 shadow-sm">
                 <div class="flex items-center gap-3 truncate">
                   <LucideFileText class="w-5 h-5 text-cantuaria-oxford/20" />
@@ -118,15 +118,18 @@ const selectedFiles = ref<File[]>([])
 const isDragging = ref(false)
 const currentUploadIndex = ref(0)
 
+const topRef = ref<HTMLElement | null>(null)
+const listRef = ref<HTMLElement | null>(null)
+
 const slugify = (text: string) => {
   return text
     .toString()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[^a-z0-9]+/g, '-')     // Substitui caracteres não alfanuméricos por -
-    .replace(/^-+|-+$/g, '')         // Remove dashes do início/fim
-    .replace(/-+/g, '-')             // Remove dashes duplicados
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-+/g, '-')
 }
 
 const handleFileSelect = (e: any) => {
@@ -143,7 +146,6 @@ const handleDrop = (e: DragEvent) => {
 }
 
 const addFiles = (newFiles: File[]) => {
-  // Filtra por extensões permitidas
   const allowedExts = ['pdf', 'epub', 'docx', 'txt']
   const filtered = newFiles.filter(f => {
     const ext = f.name.split('.').pop()?.toLowerCase()
@@ -152,6 +154,14 @@ const addFiles = (newFiles: File[]) => {
   
   selectedFiles.value = [...selectedFiles.value, ...filtered]
   error.value = null
+
+  // Scroll suave para a lista de arquivos se houver novos
+  if (filtered.length > 0) {
+    nextTick(() => {
+      const el = document.getElementById('file-list')
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 }
 
 const removeFile = (index: number) => {
@@ -162,6 +172,7 @@ const resetFlow = () => {
   success.value = false
   selectedFiles.value = []
   error.value = null
+  topRef.value?.scrollIntoView({ behavior: 'smooth' })
 }
 
 const handleSubmit = async () => {
@@ -175,7 +186,6 @@ const handleSubmit = async () => {
       currentUploadIndex.value = i
       const file = selectedFiles.value[i]
       
-      // 1. Upload para o Storage
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `uploads/${fileName}`
@@ -186,12 +196,10 @@ const handleSubmit = async () => {
 
       if (uploadError) throw uploadError
 
-      // 2. Pegar URL Pública
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
         .getPublicUrl(filePath)
 
-      // 3. Criar registro (título provisório = nome do arquivo sem extensão)
       const provTitle = file.name.replace(/\.[^/.]+$/, "")
       const { error: dbError } = await supabase
         .from('documents')
@@ -207,6 +215,10 @@ const handleSubmit = async () => {
     }
 
     success.value = true
+    // Scroll para o topo para ver a mensagem de sucesso
+    nextTick(() => {
+      topRef.value?.scrollIntoView({ behavior: 'smooth' })
+    })
   } catch (err) {
     console.error('Erro no envio múltiplo:', err)
     error.value = 'Ocorreu um erro ao enviar um ou mais documentos. Verifique sua conexão.'
@@ -224,5 +236,14 @@ const handleSubmit = async () => {
 }
 .animate-fade-in {
   animation: fade-in 0.6s ease-out forwards;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #C5A059;
 }
 </style>
