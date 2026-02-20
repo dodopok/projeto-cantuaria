@@ -68,10 +68,10 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start">
           
           <!-- Document Cover & Quick Stats -->
-          <div class="lg:col-span-4 space-y-8 md:space-y-12">
-            <div 
-              @click="showReader = true"
-              class="relative group shadow-2xl border border-cantuaria-charcoal/5 cursor-pointer overflow-hidden max-w-sm mx-auto lg:max-w-none"
+          <div class="lg:col-span-4 space-y-4">
+            <NuxtLink 
+              :to="`/documento/${document.slug}/pdf`"
+              class="relative block group shadow-2xl border border-cantuaria-charcoal/5 cursor-pointer overflow-hidden max-w-sm mx-auto lg:max-w-none"
             >
               <img :src="document.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'" :alt="document.title" class="w-full aspect-[3/4.5] object-cover transition-transform duration-700 group-hover:scale-105" />
               <div class="absolute inset-0 bg-cantuaria-oxford/20 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -79,7 +79,7 @@
                   <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-oxford">Clique para Ler</span>
                 </div>
               </div>
-            </div>
+            </NuxtLink>
 
             <!-- Botão de Ação Mobile/Desktop -->
             <div class="pt-2 space-y-3">
@@ -156,11 +156,8 @@
                 <!-- Mini visualização do texto - Essencial para o Google indexar o conteúdo inicial -->
                 <div class="prose-cantuaria text-cantuaria-charcoal/70 line-clamp-[15] pointer-events-none opacity-80" v-html="document.content_text"></div>
                 <div v-if="document.content_text" class="mt-8 flex flex-wrap gap-4">
-                  <button @click="showReader = true; readerViewMode = 'text'" class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-gold hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group">
-                    Ler texto aqui <LucideArrowRight class="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                  <NuxtLink :to="`/documento/${document.slug}/texto`" class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-oxford/40 hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group border-l border-cantuaria-oxford/10 pl-4">
-                    Abrir em página dedicada <LucideExternalLink class="w-3 h-3" />
+                  <NuxtLink :to="`/documento/${document.slug}/texto`" class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-gold hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group">
+                    Ler versão em texto completo <LucideArrowRight class="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </NuxtLink>
                 </div>
               </div>
@@ -169,36 +166,6 @@
         </div>
       </section>
     </div>
-
-    <!-- Reader Overlay -->
-    <Teleport to="body">
-      <div v-if="showReader" class="fixed inset-0 z-[9999] bg-white flex flex-col overflow-hidden" style="pointer-events: auto;">
-        <header class="h-16 border-b border-cantuaria-charcoal/5 flex items-center justify-between px-4 md:px-6 bg-cantuaria-cream/50 backdrop-blur-sm shrink-0 gap-4">
-          <span class="font-serif text-base md:text-lg text-cantuaria-oxford truncate max-w-[150px] md:max-w-md shrink">{{ document?.title }}</span>
-          <div class="flex items-center gap-3 shrink-0">
-            <div v-if="document?.content_markdown" class="flex border border-cantuaria-oxford/20 rounded-sm overflow-hidden bg-white">
-              <button
-                @click="readerViewMode = 'pdf'"
-                :class="['px-3 py-1.5 text-[9px] uppercase tracking-widest font-bold transition-colors', readerViewMode === 'pdf' ? 'bg-cantuaria-oxford text-white' : 'text-cantuaria-oxford/60 hover:text-cantuaria-oxford']"
-              >PDF</button>
-              <button
-                @click="readerViewMode = 'text'"
-                :class="['px-3 py-1.5 text-[9px] uppercase tracking-widest font-bold transition-colors', readerViewMode === 'text' ? 'bg-cantuaria-oxford text-white' : 'text-cantuaria-oxford/60 hover:text-cantuaria-oxford']"
-              >Texto</button>
-            </div>
-            <button @click="showReader = false" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full transition-colors">
-              <LucideX class="w-6 h-6 text-cantuaria-oxford" />
-            </button>
-          </div>
-        </header>
-        <div class="flex-grow relative flex flex-col overflow-hidden" :class="readerViewMode === 'text' ? 'bg-cantuaria-cream' : 'bg-cantuaria-charcoal/95'">
-          <Reader v-if="readerViewMode === 'pdf'" :url="document?.file_url" :type="document?.type" class="flex-grow" />
-          <div v-else class="flex-grow overflow-auto flex justify-center p-6 md:p-12 scroll-smooth">
-            <div class="w-full max-w-3xl bg-white shadow-2xl p-8 md:p-20 h-fit min-h-full prose-cantuaria" v-html="renderedMarkdown"></div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
 
     <!-- Removal Request Modal -->
     <Teleport to="body">
@@ -254,15 +221,11 @@ import {
   X as LucideX,
   AlertCircle as LucideAlertCircle,
   ArrowRight as LucideArrowRight,
-  FileText as LucideFileText,
-  ExternalLink as LucideExternalLink
+  FileText as LucideFileText
 } from 'lucide-vue-next'
 import { useScrollLock } from '@vueuse/core'
-import { marked } from 'marked'
 
 const route = useRoute()
-const showReader = ref(false)
-const readerViewMode = ref<'pdf' | 'text'>('pdf')
 const downloading = ref(false)
 
 // SSR Fetch
@@ -280,11 +243,6 @@ useSeoMeta({
   twitterCard: 'summary_large_image'
 })
 
-const renderedMarkdown = computed(() => {
-  if (!document.value?.content_markdown) return ''
-  return marked(document.value.content_markdown) as string
-})
-
 // Remoção
 const showRemovalModal = ref(false)
 const submittingRemoval = ref(false)
@@ -294,11 +252,10 @@ const removalForm = ref({
   reason: ''
 })
 
-// Bloqueia o scroll do body quando o reader ou modal está aberto
+// Bloqueia o scroll do body quando o modal está aberto
 const isLocked = useScrollLock(process.client ? window.document.body : null)
-watch([showReader, showRemovalModal], ([r, m]) => {
-  isLocked.value = r || m
-  if (!r) readerViewMode.value = 'pdf'
+watch(showRemovalModal, (m) => {
+  isLocked.value = m
 })
 
 const submitRemovalRequest = async () => {
