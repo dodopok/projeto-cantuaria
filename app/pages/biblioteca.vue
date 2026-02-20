@@ -3,9 +3,9 @@
     <!-- Header Refinado -->
     <section class="py-6 bg-cantuaria-oxford text-white relative overflow-hidden">
       <div class="absolute inset-0 opacity-[0.03] grayscale pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
-      <div class="container mx-auto px-6 relative z-10 text-center">
+      <div class="container mx-auto px-6 relative z-10">
         <h1 class="text-4xl md:text-7xl font-serif mb-6 leading-tight">Biblioteca Digital</h1>
-        <p class="text-white/50 max-w-2xl mx-auto font-serif italic text-base md:text-xl">
+        <p class="text-white/50 max-w-2xl font-serif italic text-base md:text-xl">
           Navegue por séculos de sabedoria e liturgia. Explore o acervo oficial da tradição anglicana em uma experiência digital imersiva.
         </p>
       </div>
