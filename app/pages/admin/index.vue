@@ -37,12 +37,19 @@
               >
                 Publicados
               </button>
-              <button 
+              <button
                 @click="currentTab = 'removal'; currentPage = 0"
-                :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
+                :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2',
                 currentTab === 'removal' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
               >
                 Solicitações ({{ removalRequests.length }})
+              </button>
+              <button
+                @click="currentTab = 'publications'; currentPage = 0"
+                :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2',
+                currentTab === 'publications' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
+              >
+                Publicações ({{ publications.length }})
               </button>
             </div>
 
@@ -154,6 +161,50 @@
                 <button @click="handleRemoval(req.id, 'approve')" class="px-6 py-3 bg-cantuaria-crimson text-white text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-crimson/90 shadow-lg transition-all">Excluir Obra</button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Publications Tab -->
+        <div v-else-if="currentTab === 'publications'" class="space-y-6">
+          <div class="flex justify-end">
+            <button @click="openNewPublication" class="flex items-center gap-2 px-6 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all">
+              <LucidePlus class="w-4 h-4" />
+              Nova Publicação
+            </button>
+          </div>
+          <div v-if="publications.length === 0" class="bg-white border border-cantuaria-charcoal/5 p-20 text-center shadow-sm">
+            <LucideNewspaper class="w-12 h-12 mx-auto mb-4 text-cantuaria-gold/30" />
+            <p class="font-serif text-xl text-cantuaria-oxford/50">Nenhuma publicação cadastrada.</p>
+          </div>
+          <div v-else class="bg-white border border-cantuaria-charcoal/5 shadow-sm overflow-hidden rounded-sm">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-cantuaria-cream/50 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 border-b border-cantuaria-charcoal/5">
+                  <th class="px-6 py-4">Publicação</th>
+                  <th class="px-6 py-4">Tipo</th>
+                  <th class="px-6 py-4">Anos</th>
+                  <th class="px-6 py-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-cantuaria-charcoal/5">
+                <tr v-for="pub in publications" :key="pub.id" class="group hover:bg-cantuaria-cream/30 transition-colors">
+                  <td class="px-6 py-5">
+                    <div class="font-medium text-cantuaria-oxford">{{ pub.title }}</div>
+                    <div v-if="pub.publisher" class="text-[10px] text-cantuaria-charcoal/40 mt-0.5">{{ pub.publisher }}</div>
+                  </td>
+                  <td class="px-6 py-5 text-xs text-cantuaria-charcoal/60">{{ pub.publication_type || '—' }}</td>
+                  <td class="px-6 py-5 text-xs text-cantuaria-charcoal/60">
+                    {{ pub.start_year || '—' }}{{ pub.end_year && pub.end_year !== pub.start_year ? `–${pub.end_year}` : '' }}
+                  </td>
+                  <td class="px-6 py-5 text-right whitespace-nowrap">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button @click="openEditPublication(pub)" class="px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all">Editar</button>
+                      <button @click="deletePublication(pub)" class="p-2 text-cantuaria-charcoal/20 hover:text-cantuaria-crimson transition-colors"><LucideTrash2 class="w-4 h-4" /></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -452,6 +503,13 @@
                       <option value="Documento">Documento Histórico</option>
                     </select>
                   </div>
+                  <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Publicação</label>
+                    <select v-model="editingItem.publication_id" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent appearance-none disabled:opacity-50">
+                      <option :value="null">Nenhuma</option>
+                      <option v-for="pub in publications" :key="pub.id" :value="pub.id">{{ pub.title }}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Resumo</label><textarea rows="6" v-model="editingItem.summary" :disabled="publishing" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed bg-cantuaria-cream/10 disabled:opacity-50"></textarea></div>
@@ -494,6 +552,63 @@
           </footer>
         </div>
       </div>
+      <!-- Publication Create/Edit Modal -->
+      <div v-if="editingPublication !== null" class="fixed inset-0 z-[100] bg-cantuaria-oxford/95 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xl shadow-2xl overflow-hidden animate-fade-in">
+          <header class="p-6 border-b border-cantuaria-charcoal/5 flex justify-between items-center">
+            <h3 class="font-serif text-2xl text-cantuaria-oxford">{{ editingPublication.id ? 'Editar Publicação' : 'Nova Publicação' }}</h3>
+            <button @click="editingPublication = null" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-6 h-6" /></button>
+          </header>
+          <div class="p-8 space-y-6">
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título *</label>
+              <input type="text" v-model="editingPublication.title" @input="updatePublicationSlug" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Slug *</label>
+              <input type="text" v-model="editingPublication.slug" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-oxford text-[10px] font-mono bg-transparent text-cantuaria-charcoal/40" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tipo</label>
+                <select v-model="editingPublication.publication_type" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent appearance-none">
+                  <option value="">—</option>
+                  <option value="Revista">Revista</option>
+                  <option value="Jornal">Jornal</option>
+                  <option value="Série">Série</option>
+                  <option value="Coleção">Coleção</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Editora / Órgão</label>
+                <input type="text" v-model="editingPublication.publisher" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano Inicial</label>
+                <input type="number" v-model="editingPublication.start_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano Final</label>
+                <input type="number" v-model="editingPublication.end_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Descrição</label>
+              <textarea rows="3" v-model="editingPublication.description" class="w-full border border-cantuaria-charcoal/10 p-3 focus:outline-none focus:border-cantuaria-oxford text-sm leading-relaxed bg-cantuaria-cream/10"></textarea>
+            </div>
+          </div>
+          <footer class="px-8 py-6 border-t border-cantuaria-charcoal/5 bg-cantuaria-cream/30 flex justify-end gap-4">
+            <button @click="editingPublication = null" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
+            <button @click="savePublication" :disabled="savingPublication" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all">
+              <template v-if="savingPublication"><LucideLoader2 class="w-4 h-4 animate-spin inline mr-2" /> Salvando...</template>
+              <template v-else>Salvar</template>
+            </button>
+          </footer>
+        </div>
+      </div>
     </div>
   </NuxtLayout>
 </template>
@@ -515,7 +630,9 @@ import {
   LayoutGrid as LucideLayoutGrid,
   Pencil as LucidePencil,
   ScanText as LucideScanText,
-  AlertCircle as LucideAlertCircle
+  AlertCircle as LucideAlertCircle,
+  Plus as LucidePlus,
+  Newspaper as LucideNewspaper
 } from 'lucide-vue-next'
 import 'cropperjs/dist/cropper.css'
 
@@ -523,7 +640,7 @@ definePageMeta({ middleware: 'admin' })
 
 const supabase = useSupabaseClient()
 const loading = ref(true)
-const currentTab = ref<'pending' | 'published' | 'removal'>('pending')
+const currentTab = ref<'pending' | 'published' | 'removal' | 'publications'>('pending')
 const items = ref<any[]>([])
 const pendingCount = ref(0)
 const editingItem = ref<any>(null)
@@ -558,6 +675,11 @@ const isAnalyzingBatch = ref(false)
 const publishingBatch = ref(false)
 const batchResults = ref<any[]>([])
 const completedCount = computed(() => batchResults.value.filter(r => r.status === 'complete').length)
+
+// Publications state
+const publications = ref<any[]>([])
+const editingPublication = ref<any>(null)
+const savingPublication = ref(false)
 
 // Batch OCR state
 const batchOcrActive = ref(false)
@@ -611,7 +733,13 @@ const handleRemoval = async (requestId: string, action: 'approve' | 'deny') => {
 const fetchData = async () => {
   loading.value = true
   selectedIds.value = []
-  
+
+  if (currentTab.value === 'publications') {
+    await fetchPublications()
+    loading.value = false
+    return
+  }
+
   if (currentTab.value === 'removal') {
     await fetchRemovalRequests()
     loading.value = false
@@ -921,7 +1049,58 @@ const deleteItem = async (item: any) => {
 
 const logout = async () => { await supabase.auth.signOut(); navigateTo('/login') }
 
-onMounted(fetchData)
+// Publications management
+const fetchPublications = async () => {
+  const data = await $fetch('/api/publications') as any[]
+  publications.value = data
+}
+
+const openNewPublication = () => {
+  editingPublication.value = { title: '', slug: '', description: '', publisher: '', publication_type: '', start_year: null, end_year: null }
+}
+
+const openEditPublication = (pub: any) => {
+  editingPublication.value = JSON.parse(JSON.stringify(pub))
+}
+
+const updatePublicationSlug = () => {
+  if (editingPublication.value && editingPublication.value.title && !editingPublication.value.id) {
+    editingPublication.value.slug = slugify(editingPublication.value.title)
+  }
+}
+
+const savePublication = async () => {
+  if (!editingPublication.value.title || !editingPublication.value.slug) return alert('Preencha título e slug.')
+  savingPublication.value = true
+  try {
+    if (editingPublication.value.id) {
+      await $fetch(`/api/publications/${editingPublication.value.id}`, { method: 'PUT', body: editingPublication.value })
+    } else {
+      await $fetch('/api/publications', { method: 'POST', body: editingPublication.value })
+    }
+    editingPublication.value = null
+    await fetchPublications()
+  } catch (err: any) {
+    alert('Erro ao salvar publicação: ' + (err.data?.message || err.message))
+  } finally {
+    savingPublication.value = false
+  }
+}
+
+const deletePublication = async (pub: any) => {
+  if (!confirm(`Excluir a publicação "${pub.title}"? Os documentos vinculados serão desvinculados.`)) return
+  try {
+    await $fetch(`/api/publications/${pub.id}`, { method: 'DELETE' })
+    await fetchPublications()
+  } catch (err) {
+    alert('Erro ao excluir publicação.')
+  }
+}
+
+onMounted(() => {
+  fetchData()
+  fetchPublications()
+})
 </script>
 
 <style scoped>
