@@ -554,50 +554,72 @@
       </div>
       <!-- Publication Create/Edit Modal -->
       <div v-if="editingPublication !== null" class="fixed inset-0 z-[100] bg-cantuaria-oxford/95 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xl shadow-2xl overflow-hidden animate-fade-in">
+        <div class="bg-white w-full max-w-4xl shadow-2xl overflow-hidden animate-fade-in">
           <header class="p-6 border-b border-cantuaria-charcoal/5 flex justify-between items-center">
             <h3 class="font-serif text-2xl text-cantuaria-oxford">{{ editingPublication.id ? 'Editar Publicação' : 'Nova Publicação' }}</h3>
             <button @click="editingPublication = null" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-6 h-6" /></button>
           </header>
-          <div class="p-8 space-y-6">
-            <div class="space-y-2">
-              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título *</label>
-              <input type="text" v-model="editingPublication.title" @input="updatePublicationSlug" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent" />
+          <div class="p-8 flex flex-col md:flex-row gap-10">
+            <!-- Cover Upload -->
+            <div class="w-full md:w-1/3">
+              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 block mb-4">Capa da Publicação</label>
+              <div @click="($refs.pubCoverInput as HTMLInputElement).click()" class="aspect-[3/4.5] bg-cantuaria-cream/50 border-2 border-dashed border-cantuaria-charcoal/10 flex flex-col items-center justify-center p-4 cursor-pointer hover:border-cantuaria-oxford/30 transition-colors group relative overflow-hidden shadow-inner">
+                <img v-if="editingPublication.cover_url" :src="editingPublication.cover_url" class="absolute inset-0 w-full h-full object-cover" />
+                <template v-else>
+                  <LucideImage class="w-8 h-8 text-cantuaria-charcoal/20 group-hover:text-cantuaria-oxford transition-colors mb-2" />
+                  <span class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 text-center">Subir Capa</span>
+                </template>
+                <div v-if="uploadingCover" class="absolute inset-0 bg-white/80 flex items-center justify-center">
+                  <LucideLoader2 class="w-6 h-6 animate-spin text-cantuaria-oxford" />
+                </div>
+                <input ref="pubCoverInput" type="file" class="hidden" @change="handlePublicationCoverUpload" accept="image/*" />
+              </div>
+              <p class="text-[9px] text-cantuaria-charcoal/40 mt-4 leading-relaxed italic">
+                A capa será exibida na listagem de publicações e na página da coleção.
+              </p>
             </div>
-            <div class="space-y-2">
-              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Slug *</label>
-              <input type="text" v-model="editingPublication.slug" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-oxford text-[10px] font-mono bg-transparent text-cantuaria-charcoal/40" />
-            </div>
-            <div class="grid grid-cols-2 gap-4">
+
+            <!-- Fields -->
+            <div class="flex-grow space-y-6">
               <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tipo</label>
-                <select v-model="editingPublication.publication_type" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent appearance-none">
-                  <option value="">—</option>
-                  <option value="Revista">Revista</option>
-                  <option value="Jornal">Jornal</option>
-                  <option value="Série">Série</option>
-                  <option value="Coleção">Coleção</option>
-                  <option value="Outro">Outro</option>
-                </select>
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Título *</label>
+                <input type="text" v-model="editingPublication.title" @input="updatePublicationSlug" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford font-serif text-xl bg-transparent" />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Editora / Órgão</label>
-                <input type="text" v-model="editingPublication.publisher" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Slug *</label>
+                <input type="text" v-model="editingPublication.slug" class="w-full border-b border-cantuaria-charcoal/10 py-1 focus:outline-none focus:border-cantuaria-oxford text-[10px] font-mono bg-transparent text-cantuaria-charcoal/40" />
               </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tipo</label>
+                  <select v-model="editingPublication.publication_type" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent appearance-none">
+                    <option value="">—</option>
+                    <option value="Revista">Revista</option>
+                    <option value="Jornal">Jornal</option>
+                    <option value="Série">Série</option>
+                    <option value="Coleção">Coleção</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Editora / Órgão</label>
+                  <input type="text" v-model="editingPublication.publisher" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano Inicial</label>
+                  <input type="number" v-model="editingPublication.start_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano Final</label>
+                  <input type="number" v-model="editingPublication.end_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+                </div>
+              </div>
               <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano Inicial</label>
-                <input type="number" v-model="editingPublication.start_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
+                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Descrição</label>
+                <textarea rows="3" v-model="editingPublication.description" class="w-full border border-cantuaria-charcoal/10 p-3 focus:outline-none focus:border-cantuaria-oxford text-sm leading-relaxed bg-cantuaria-cream/10"></textarea>
               </div>
-              <div class="space-y-2">
-                <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Ano Final</label>
-                <input type="number" v-model="editingPublication.end_year" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent" />
-              </div>
-            </div>
-            <div class="space-y-2">
-              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Descrição</label>
-              <textarea rows="3" v-model="editingPublication.description" class="w-full border border-cantuaria-charcoal/10 p-3 focus:outline-none focus:border-cantuaria-oxford text-sm leading-relaxed bg-cantuaria-cream/10"></textarea>
             </div>
           </div>
           <footer class="px-8 py-6 border-t border-cantuaria-charcoal/5 bg-cantuaria-cream/30 flex justify-end gap-4">
@@ -651,6 +673,7 @@ const capturingPdf = ref(false)
 const performingOCR = ref(false)
 const deletingBulk = ref(false)
 const viewMode = ref<'table' | 'grid'>('table')
+const croppingTarget = ref<'document' | 'publication'>('document')
 
 // Remoção
 const removalRequests = ref<any[]>([])
@@ -875,7 +898,11 @@ const confirmCrop = async () => {
       img.src = publicUrl
     })
 
-    editingItem.value.thumbnail_url = publicUrl
+    if (croppingTarget.value === 'publication') {
+      editingPublication.value.cover_url = publicUrl
+    } else {
+      editingItem.value.thumbnail_url = publicUrl
+    }
     showCropModal.value = false
   } catch (err) {
     console.error('Erro ao salvar recorte:', err)
@@ -943,6 +970,30 @@ const publish = async () => {
 }
 
 const handleCoverUpload = async (e: any) => {
+  croppingTarget.value = 'document'
+  const file = e.target.files[0]; if (!file) return; 
+  
+  const reader = new FileReader()
+  const Cropper = (await import('cropperjs')).default
+  reader.onload = (event) => {
+    croppingImage.value = event.target?.result as string
+    showCropModal.value = true
+    nextTick(() => {
+      if (cropperInstance) cropperInstance.destroy()
+      cropperInstance = new Cropper(cropImgRef.value!, {
+        aspectRatio: 3 / 4.5,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 1,
+        background: false,
+      })
+    })
+  }
+  reader.readAsDataURL(file)
+}
+
+const handlePublicationCoverUpload = async (e: any) => {
+  croppingTarget.value = 'publication'
   const file = e.target.files[0]; if (!file) return; 
   
   const reader = new FileReader()
@@ -1056,7 +1107,7 @@ const fetchPublications = async () => {
 }
 
 const openNewPublication = () => {
-  editingPublication.value = { title: '', slug: '', description: '', publisher: '', publication_type: '', start_year: null, end_year: null }
+  editingPublication.value = { title: '', slug: '', description: '', cover_url: null, publisher: '', publication_type: '', start_year: null, end_year: null }
 }
 
 const openEditPublication = (pub: any) => {
