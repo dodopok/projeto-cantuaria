@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout>
-    <section ref="topRef" class="py-20 bg-cantuaria-oxford text-white overflow-hidden relative">
+    <section ref="topRef" class="py-6 bg-cantuaria-oxford text-white overflow-hidden relative">
       <div class="absolute inset-0 opacity-10 pointer-events-none">
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000')] bg-cover bg-center grayscale scale-110"></div>
       </div>
@@ -15,7 +15,7 @@
       </div>
     </section>
 
-    <section class="py-20 bg-cantuaria-cream">
+    <section class="py-6 bg-cantuaria-cream">
       <div class="container mx-auto px-6">
         <div v-if="success" class="max-w-2xl mx-auto text-center py-20 animate-fade-in">
           <LucideCheckCircle class="w-20 h-20 text-cantuaria-gold mx-auto mb-8" />

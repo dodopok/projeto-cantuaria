@@ -22,32 +22,19 @@
           Um repositório centralizado para a produção intelectual, litúrgica e histórica da tradição anglicana em língua portuguesa.
         </p>
 
-        <!-- Search Bar -->
-        <form @submit.prevent="handleSearch" class="max-w-3xl mx-auto relative group">
-          <div class="absolute -inset-1 bg-gradient-to-r from-cantuaria-gold/20 to-cantuaria-oxford/20 blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-          <div class="relative bg-white p-1 md:p-2 flex flex-col sm:flex-row items-center shadow-2xl transition-all">
-            <div class="flex items-center w-full px-4 md:px-0">
-              <LucideSearch class="w-5 h-5 md:w-6 md:h-6 md:ml-6 text-cantuaria-charcoal/30 shrink-0" />
-              <input 
-                v-model="searchQuery"
-                type="text" 
-                placeholder="Busque por títulos, autores..." 
-                class="w-full px-4 md:px-6 py-4 md:py-5 focus:outline-none text-base md:text-xl font-serif placeholder:text-cantuaria-charcoal/20 bg-transparent text-cantuaria-oxford"
-              />
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-6 animate-fade-in" style="animation-delay: 0.3s">
+          <NuxtLink to="/biblioteca" class="group relative px-12 py-5 bg-cantuaria-gold text-cantuaria-oxford text-[10px] md:text-xs uppercase font-bold tracking-[0.3em] overflow-hidden transition-all hover:shadow-[0_0_40px_rgba(197,168,124,0.3)]">
+            <div class="relative z-10 flex items-center gap-3">
+              <LucideLibrary class="w-4 h-4" />
+              <span>Explorar Acervo Completo</span>
             </div>
-            <button type="submit" class="w-full sm:w-auto bg-cantuaria-oxford text-white py-4 md:py-5 px-8 md:px-10 flex items-center justify-center gap-3 group/btn transition-all hover:bg-cantuaria-oxford/90 active:scale-95 shrink-0">
-              <span class="text-[10px] md:text-xs uppercase font-bold tracking-[0.2em]">Explorar</span>
-              <LucideArrowRight class="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover/btn:translate-x-1" />
-            </button>
-          </div>
+            <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+          </NuxtLink>
           
-          <div class="mt-6 flex flex-wrap justify-center gap-4 md:gap-6 text-[9px] md:text-[10px] text-white/40 uppercase tracking-[0.2em] font-bold">
-            <span @click="quickSearch('Liturgia')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#Liturgia</span>
-            <span @click="quickSearch('Teologia')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#Teologia</span>
-            <span @click="quickSearch('História')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#História</span>
-            <span @click="quickSearch('Patrística')" class="cursor-pointer hover:text-cantuaria-gold transition-colors">#Patrística</span>
-          </div>
-        </form>
+          <NuxtLink to="/contribuir" class="px-12 py-5 border border-white/20 text-white text-[10px] md:text-xs uppercase font-bold tracking-[0.3em] hover:bg-white/5 transition-all">
+            Contribuir
+          </NuxtLink>
+        </div>
       </div>
     </section>
 
@@ -101,10 +88,9 @@
 </template>
 
 <script setup lang="ts">
-import { Search as LucideSearch, ArrowRight as LucideArrowRight, ArrowUpRight as LucideArrowUpRight } from 'lucide-vue-next'
+import { ArrowUpRight as LucideArrowUpRight, Library as LucideLibrary } from 'lucide-vue-next'
 
 const supabase = useSupabaseClient()
-const searchQuery = ref('')
 
 const stats = ref([
   { label: 'Obras Catalogadas', value: '0', loading: true },
@@ -130,15 +116,6 @@ const fetchStats = async () => {
   } catch (e) {
     console.error('Erro ao carregar estatísticas:', e)
   }
-}
-
-const handleSearch = () => {
-  if (!searchQuery.value.trim()) return
-  navigateTo(`/biblioteca?q=${encodeURIComponent(searchQuery.value)}`)
-}
-
-const quickSearch = (term: string) => {
-  navigateTo(`/biblioteca?q=${encodeURIComponent(term)}`)
 }
 
 const featuredCollections = [
