@@ -16,6 +16,7 @@
         <NuxtLink to="/biblioteca" class="nav-link">Biblioteca</NuxtLink>
         <NuxtLink to="/autores" class="nav-link">Autores</NuxtLink>
         <NuxtLink to="/categorias" class="nav-link">Categorias</NuxtLink>
+        <NuxtLink to="/publicacoes" class="nav-link">Publicações</NuxtLink>
         <NuxtLink to="/contribuir" class="nav-link text-cantuaria-crimson/80 hover:text-cantuaria-crimson font-bold">Contribuir</NuxtLink>
       </div>
 
@@ -60,6 +61,7 @@
           <NuxtLink to="/biblioteca" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Biblioteca</NuxtLink>
           <NuxtLink to="/autores" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Autores</NuxtLink>
           <NuxtLink to="/categorias" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Categorias</NuxtLink>
+          <NuxtLink to="/publicacoes" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Publicações</NuxtLink>
           <NuxtLink to="/contribuir" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-crimson border-b border-cantuaria-cream pb-2">Contribuir</NuxtLink>
           <NuxtLink to="/login" @click="isMenuOpen = false" class="btn-primary py-4 text-center">Área do Administrador</NuxtLink>
         </div>
