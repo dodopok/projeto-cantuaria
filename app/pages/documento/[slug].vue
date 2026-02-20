@@ -54,9 +54,11 @@
           <button @click="share" class="hover:text-cantuaria-oxford flex items-center gap-2 transition-colors">
             <LucideShare2 class="w-3.5 h-3.5" /> <span class="hidden xs:inline">Compartilhar</span>
           </button>
-          <a :href="document.file_url" target="_blank" download class="hover:text-cantuaria-oxford flex items-center gap-2 transition-colors">
-            <LucideDownload class="w-3.5 h-3.5" /> <span class="hidden xs:inline">Baixar PDF</span>
-          </a>
+          <button @click="download" :disabled="downloading" class="hover:text-cantuaria-oxford flex items-center gap-2 transition-colors disabled:opacity-50">
+            <LucideLoader2 v-if="downloading" class="w-3.5 h-3.5 animate-spin" />
+            <LucideDownload v-else class="w-3.5 h-3.5" /> 
+            <span class="hidden xs:inline">{{ downloading ? 'Baixando...' : 'Baixar PDF' }}</span>
+          </button>
         </div>
       </nav>
 
@@ -162,6 +164,7 @@ const route = useRoute()
 const showReader = ref(false)
 const document = ref<any>(null)
 const loading = ref(true)
+const downloading = ref(false)
 
 const fetchDocument = async () => {
   loading.value = true
@@ -180,6 +183,28 @@ const fetchDocument = async () => {
       twitterImage: data.thumbnail_url
     })
   } catch (err) { console.error('Erro:', err) } finally { loading.value = false }
+}
+
+const download = async () => {
+  if (!document.value?.file_url) return
+  downloading.value = true
+  try {
+    const response = await fetch(document.value.file_url)
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = `${document.value.title}.pdf`
+    window.document.body.appendChild(link)
+    link.click()
+    window.document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('Erro ao baixar:', err)
+    window.open(document.value.file_url, '_blank')
+  } finally {
+    downloading.value = false
+  }
 }
 
 const share = () => { if (navigator.share) navigator.share({ title: document.value.title, url: window.location.href }) }
