@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout>
-    <div v-if="loading && !document" class="min-h-screen bg-cantuaria-cream">
+    <div v-if="pending && !document" class="min-h-screen bg-cantuaria-cream">
       <nav class="container mx-auto px-6 py-6 border-b border-cantuaria-oxford/5 flex justify-between items-center">
         <div class="h-4 w-32 animate-skeleton"></div>
         <div class="flex gap-6">
@@ -35,14 +35,14 @@
       </section>
     </div>
 
-    <div v-else-if="!document" class="min-h-screen bg-cantuaria-cream flex flex-col items-center justify-center text-center px-6">
+    <div v-else-if="!document && !pending" class="min-h-screen bg-cantuaria-cream flex flex-col items-center justify-center text-center px-6">
       <LucideBookX class="w-20 h-20 text-cantuaria-charcoal/10 mb-8" />
       <h1 class="text-3xl md:text-4xl font-serif text-cantuaria-oxford mb-4">Obra não encontrada</h1>
       <p class="text-cantuaria-charcoal/60 mb-10">Este documento pode ter sido removido ou o link está incorreto.</p>
       <NuxtLink to="/biblioteca" class="btn-primary">Voltar para a Biblioteca</NuxtLink>
     </div>
 
-    <div v-else class="min-h-screen bg-cantuaria-cream">
+    <div v-else-if="document" class="min-h-screen bg-cantuaria-cream">
       <!-- Breadcrumbs & Actions -->
       <nav class="container mx-auto px-6 py-4 md:py-6 border-b border-cantuaria-oxford/5 flex flex-wrap justify-between items-center gap-4 text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">
         <div class="flex items-center gap-3">
@@ -82,11 +82,19 @@
             </div>
 
             <!-- Botão de Ação Mobile/Desktop -->
-            <div class="pt-2">
-              <button @click="showReader = true" class="w-full btn-primary py-4 px-8 text-center text-[10px] tracking-[0.2em] font-bold uppercase shadow-xl flex items-center justify-center gap-3 group">
+            <div class="pt-2 space-y-3">
+              <NuxtLink :to="`/documento/${document.slug}/pdf`" class="w-full btn-primary py-4 px-8 text-center text-[10px] tracking-[0.2em] font-bold uppercase shadow-xl flex items-center justify-center gap-3 group">
                 <LucideBookOpen class="w-4 h-4" />
-                <span>Visualizar Obra</span>
-              </button>
+                <span>Abrir Original (PDF)</span>
+              </NuxtLink>
+              <NuxtLink 
+                v-if="document.content_markdown"
+                :to="`/documento/${document.slug}/texto`" 
+                class="w-full block py-4 px-8 text-center text-[10px] tracking-[0.2em] font-bold uppercase border border-cantuaria-oxford/20 text-cantuaria-oxford hover:bg-cantuaria-oxford hover:text-white transition-all flex items-center justify-center gap-3"
+              >
+                <LucideFileText class="w-4 h-4" />
+                <span>Versão em Texto</span>
+              </NuxtLink>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-6 md:gap-8 pt-8 border-t border-cantuaria-oxford/10">
@@ -145,12 +153,15 @@
                   {{ document.summary }}
                 </p>
                 <div class="h-px w-20 bg-cantuaria-gold/30 mb-10"></div>
-                <!-- Mini visualização do texto -->
+                <!-- Mini visualização do texto - Essencial para o Google indexar o conteúdo inicial -->
                 <div class="prose-cantuaria text-cantuaria-charcoal/70 line-clamp-[15] pointer-events-none opacity-80" v-html="document.content_text"></div>
-                <div v-if="document.content_text" class="mt-8">
+                <div v-if="document.content_text" class="mt-8 flex flex-wrap gap-4">
                   <button @click="showReader = true; readerViewMode = 'text'" class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-gold hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group">
-                    Ler texto completo <LucideArrowRight class="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                    Ler texto aqui <LucideArrowRight class="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </button>
+                  <NuxtLink :to="`/documento/${document.slug}/texto`" class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-oxford/40 hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group border-l border-cantuaria-oxford/10 pl-4">
+                    Abrir em página dedicada <LucideExternalLink class="w-3 h-3" />
+                  </NuxtLink>
                 </div>
               </div>
             </div>
@@ -242,7 +253,9 @@ import {
   BookX as LucideBookX,
   X as LucideX,
   AlertCircle as LucideAlertCircle,
-  ArrowRight as LucideArrowRight
+  ArrowRight as LucideArrowRight,
+  FileText as LucideFileText,
+  ExternalLink as LucideExternalLink
 } from 'lucide-vue-next'
 import { useScrollLock } from '@vueuse/core'
 import { marked } from 'marked'
@@ -250,9 +263,22 @@ import { marked } from 'marked'
 const route = useRoute()
 const showReader = ref(false)
 const readerViewMode = ref<'pdf' | 'text'>('pdf')
-const document = ref<any>(null)
-const loading = ref(true)
 const downloading = ref(false)
+
+// SSR Fetch
+const { data: document, pending } = await useAsyncData(`document-${route.params.slug}`, () => 
+  $fetch(`/api/documents/${route.params.slug}`)
+)
+
+// SEO Metadata
+useSeoMeta({
+  title: computed(() => document.value ? `${document.value.title} | Projeto Cantuária` : 'Obra | Projeto Cantuária'),
+  ogTitle: computed(() => document.value ? `${document.value.title} | Projeto Cantuária` : 'Obra | Projeto Cantuária'),
+  description: computed(() => document.value?.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.'),
+  ogDescription: computed(() => document.value?.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.'),
+  ogImage: computed(() => document.value?.thumbnail_url),
+  twitterCard: 'summary_large_image'
+})
 
 const renderedMarkdown = computed(() => {
   if (!document.value?.content_markdown) return ''
@@ -275,26 +301,8 @@ watch([showReader, showRemovalModal], ([r, m]) => {
   if (!r) readerViewMode.value = 'pdf'
 })
 
-const fetchDocument = async () => {
-  loading.value = true
-  try {
-    const data: any = await $fetch(`/api/documents/${route.params.slug}`)
-    document.value = data
-    useSeoMeta({
-      title: `${data.title} | Projeto Cantuária`,
-      ogTitle: `${data.title} | Projeto Cantuária`,
-      description: data.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.',
-      ogDescription: data.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.',
-      ogImage: data.thumbnail_url,
-      twitterCard: 'summary_large_image',
-      twitterTitle: data.title,
-      twitterDescription: data.summary,
-      twitterImage: data.thumbnail_url
-    })
-  } catch (err) { console.error('Erro:', err) } finally { loading.value = false }
-}
-
 const submitRemovalRequest = async () => {
+  if (!document.value) return
   submittingRemoval.value = true
   try {
     await $fetch('/api/documents/request-removal', {
@@ -336,8 +344,7 @@ const download = async () => {
   }
 }
 
-const share = () => { if (navigator.share) navigator.share({ title: document.value.title, url: window.location.href }) }
-onMounted(fetchDocument)
+const share = () => { if (document.value && navigator.share) navigator.share({ title: document.value.title, url: window.location.href }) }
 </script>
 
 <style lang="postcss">
