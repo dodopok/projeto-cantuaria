@@ -41,7 +41,7 @@
     <!-- Stats Section -->
     <section class="py-24 bg-cantuaria-cream border-b border-cantuaria-oxford/5">
       <div class="container mx-auto px-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-16 md:gap-8">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-16 md:gap-8">
           <div v-for="stat in stats" :key="stat.label" class="flex flex-col items-center text-center group">
             <div class="text-5xl md:text-6xl font-serif text-cantuaria-oxford mb-4 transition-transform group-hover:-translate-y-1 h-[1.2em] flex items-center">
               <div v-if="stat.loading" class="h-10 w-20 animate-skeleton"></div>
@@ -95,8 +95,7 @@ const supabase = useSupabaseClient()
 const stats = ref([
   { label: 'Obras Catalogadas', value: '0', loading: true },
   { label: 'Autores & Tradutores', value: '0', loading: true },
-  { label: 'Categorias Temáticas', value: '0', loading: true },
-  { label: 'Anos de História', value: '500+', loading: false }
+  { label: 'Categorias Temáticas', value: '0', loading: true }
 ])
 
 const fetchStats = async () => {
