@@ -78,6 +78,14 @@
               </div>
             </div>
 
+            <!-- Botão de Ação Mobile/Desktop -->
+            <div class="pt-2">
+              <button @click="showReader = true" class="w-full btn-primary py-4 px-8 text-center text-[10px] tracking-[0.2em] font-bold uppercase shadow-xl flex items-center justify-center gap-3 group">
+                <LucideBookOpen class="w-4 h-4" />
+                <span>Visualizar Obra</span>
+              </button>
+            </div>
+
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-6 md:gap-8 pt-8 border-t border-cantuaria-oxford/10">
               <div>
                 <span class="block text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 mb-1">Publicado em</span>
@@ -115,14 +123,6 @@
                 <div class="h-px w-20 bg-cantuaria-gold/30 mb-8"></div>
                 <div class="text-cantuaria-charcoal/70 leading-relaxed font-sans text-sm md:text-base" v-html="document.content_text || 'Sem prévia de texto disponível.'"></div>
               </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="pt-8">
-              <button @click="showReader = true" class="w-full sm:w-auto btn-primary py-5 px-12 text-center text-sm tracking-[0.2em] font-bold uppercase shadow-2xl flex items-center justify-center gap-3 group">
-                <LucideBookOpen class="w-5 h-5" />
-                Iniciar Leitura
-              </button>
             </div>
           </div>
         </div>
