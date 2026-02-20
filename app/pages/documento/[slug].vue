@@ -143,8 +143,8 @@
             <LucideX class="w-6 h-6 text-cantuaria-oxford" />
           </button>
         </header>
-        <div class="flex-grow bg-cantuaria-charcoal/95 relative">
-          <Reader :url="document?.file_url" :type="document?.type" />
+        <div class="flex-grow bg-cantuaria-charcoal/95 relative flex flex-col overflow-hidden">
+          <Reader :url="document?.file_url" :type="document?.type" class="flex-grow" />
         </div>
       </div>
     </Teleport>
