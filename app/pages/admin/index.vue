@@ -338,8 +338,22 @@ const capturePdfCover = async () => {
     const { error } = await supabase.storage.from('covers').upload(fileName, blob)
     if (error) throw error
     const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(fileName)
+    
+    // Aguarda a imagem carregar no navegador antes de remover o loading
+    await new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = resolve
+      img.onerror = reject
+      img.src = publicUrl
+    })
+
     editingItem.value.thumbnail_url = publicUrl
-  } catch (err) { alert('Erro na captura. Verifique o acesso CORS do arquivo.') } finally { capturingPdf.value = false }
+  } catch (err) { 
+    console.error('Erro na captura:', err)
+    alert('Erro na captura. Verifique o acesso CORS do arquivo.') 
+  } finally { 
+    capturingPdf.value = false 
+  }
 }
 
 const startBatchAnalysis = async () => {
