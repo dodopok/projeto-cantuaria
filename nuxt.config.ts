@@ -59,6 +59,7 @@ export default defineNuxtConfig({
     // Private keys are only available on the server
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     perplexityApiKey: process.env.PERPLEXITY_API_KEY,
+    geminiApiKey: process.env.GEMINI_API_KEY,
 
     // Public keys are exposed to the client
     public: {
