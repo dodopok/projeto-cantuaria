@@ -50,14 +50,15 @@
           <span class="w-1 h-1 rounded-full bg-cantuaria-gold/30"></span>
           <span class="text-cantuaria-oxford">{{ document.type }}</span>
         </div>
-        <div class="flex items-center gap-4 md:gap-6">
-          <button @click="share" class="hover:text-cantuaria-oxford flex items-center gap-2 transition-colors">
-            <LucideShare2 class="w-3.5 h-3.5" /> <span class="hidden xs:inline">Compartilhar</span>
+        <div class="flex items-center gap-3 md:gap-4">
+          <button @click="share" class="flex items-center gap-2 transition-all px-3 py-2 md:px-4 md:py-2 rounded-sm border border-transparent md:border-cantuaria-oxford/10 md:bg-white md:hover:border-cantuaria-oxford md:hover:shadow-sm md:text-cantuaria-oxford group">
+            <LucideShare2 class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" /> 
+            <span class="hidden md:inline">Compartilhar</span>
           </button>
-          <button @click="download" :disabled="downloading" class="hover:text-cantuaria-oxford flex items-center gap-2 transition-colors disabled:opacity-50">
+          <button @click="download" :disabled="downloading" class="flex items-center gap-2 transition-all px-3 py-2 md:px-4 md:py-2 rounded-sm border border-transparent md:border-cantuaria-oxford/10 md:bg-white md:hover:border-cantuaria-oxford md:hover:shadow-sm md:text-cantuaria-oxford disabled:opacity-50 group">
             <LucideLoader2 v-if="downloading" class="w-3.5 h-3.5 animate-spin" />
-            <LucideDownload v-else class="w-3.5 h-3.5" /> 
-            <span class="hidden xs:inline">{{ downloading ? 'Baixando...' : 'Baixar PDF' }}</span>
+            <LucideDownload v-else class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100" /> 
+            <span class="hidden md:inline">{{ downloading ? 'Baixando...' : 'Baixar PDF' }}</span>
           </button>
         </div>
       </nav>
