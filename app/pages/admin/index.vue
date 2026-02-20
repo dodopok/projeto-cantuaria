@@ -78,7 +78,25 @@
                 class="w-full pl-10 pr-4 py-2 bg-cantuaria-cream/50 border border-cantuaria-charcoal/10 focus:outline-none focus:border-cantuaria-oxford text-xs font-sans rounded-sm transition-colors"
               />
             </div>
-            <div class="flex gap-4">
+            <div class="flex gap-4 items-center">
+              <!-- View Mode Toggle -->
+              <div class="flex border border-cantuaria-charcoal/10 rounded-sm overflow-hidden mr-2">
+                <button 
+                  @click="viewMode = 'table'"
+                  :class="['p-2 transition-colors', viewMode === 'table' ? 'bg-cantuaria-oxford text-white' : 'bg-cantuaria-cream/50 text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
+                  title="Vista em Tabela"
+                >
+                  <LucideLayoutList class="w-4 h-4" />
+                </button>
+                <button 
+                  @click="viewMode = 'grid'"
+                  :class="['p-2 transition-colors', viewMode === 'grid' ? 'bg-cantuaria-oxford text-white' : 'bg-cantuaria-cream/50 text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
+                  title="Vista em Grade"
+                >
+                  <LucideLayoutGrid class="w-4 h-4" />
+                </button>
+              </div>
+
               <select v-model="orderBy" class="bg-cantuaria-cream/50 border border-cantuaria-charcoal/10 px-4 py-2 text-[10px] uppercase tracking-widest font-bold focus:outline-none focus:border-cantuaria-oxford rounded-sm">
                 <option value="created_at:desc">Mais recentes</option>
                 <option value="created_at:asc">Mais antigos</option>
@@ -137,8 +155,50 @@
           <p class="font-serif text-xl text-cantuaria-oxford/50">Nenhum documento encontrado.</p>
         </div>
 
+        <!-- Documents View (Table or Grid) -->
         <div v-else class="space-y-6">
-          <div class="bg-white border border-cantuaria-charcoal/5 shadow-sm overflow-hidden rounded-sm">
+          
+          <!-- Grid View -->
+          <div v-if="viewMode === 'grid'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div v-for="item in items" :key="item.id" 
+              class="group relative bg-white border border-cantuaria-charcoal/5 shadow-sm hover:shadow-xl transition-all cursor-pointer overflow-hidden rounded-sm"
+              @click="openReview(item)"
+            >
+              <!-- Checkbox Overlay -->
+              <div class="absolute top-2 left-2 z-10" @click.stop>
+                <input type="checkbox" v-model="selectedIds" :value="item.id" class="w-5 h-5 accent-cantuaria-oxford shadow-sm" />
+              </div>
+
+              <!-- Thumbnail -->
+              <div class="aspect-[3/4.5] bg-cantuaria-oxford/5 flex items-center justify-center overflow-hidden border-b border-cantuaria-charcoal/5">
+                <img v-if="item.thumbnail_url" :src="item.thumbnail_url" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <LucideFileText v-else class="w-12 h-12 text-cantuaria-oxford/20" />
+                
+                <!-- Hover Actions -->
+                <div class="absolute inset-0 bg-cantuaria-oxford/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                  <button class="p-3 bg-white text-cantuaria-oxford rounded-full shadow-lg hover:scale-110 transition-transform">
+                    <LucidePencil class="w-5 h-5" />
+                  </button>
+                  <button @click.stop="deleteItem(item)" class="p-3 bg-cantuaria-crimson text-white rounded-full shadow-lg hover:scale-110 transition-transform">
+                    <LucideTrash2 class="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Info -->
+              <div class="p-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[7px] px-1.5 py-0.5 bg-cantuaria-oxford/5 text-cantuaria-oxford/60 uppercase tracking-widest font-bold rounded-sm">{{ item.type }}</span>
+                  <span class="text-[7px] text-cantuaria-charcoal/30 uppercase font-bold">{{ new Date(item.created_at).toLocaleDateString() }}</span>
+                </div>
+                <h4 class="font-medium text-cantuaria-oxford text-xs truncate mb-1" :title="item.title">{{ item.title }}</h4>
+                <p v-if="item.authors_list" class="text-[9px] text-cantuaria-charcoal/40 font-serif italic truncate">{{ item.authors_list }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table View -->
+          <div v-else class="bg-white border border-cantuaria-charcoal/5 shadow-sm overflow-hidden rounded-sm">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-cantuaria-cream/50 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 border-b border-cantuaria-charcoal/5">
@@ -403,7 +463,10 @@ import {
   Trash2 as LucideTrash2,
   Search as LucideSearch,
   ChevronLeft as LucideChevronLeft,
-  ChevronRight as LucideChevronRight
+  ChevronRight as LucideChevronRight,
+  LayoutList as LucideLayoutList,
+  LayoutGrid as LucideLayoutGrid,
+  Pencil as LucidePencil
 } from 'lucide-vue-next'
 import 'cropperjs/dist/cropper.css'
 
@@ -421,6 +484,7 @@ const uploadingCover = ref(false)
 const capturingPdf = ref(false)
 const performingOCR = ref(false)
 const deletingBulk = ref(false)
+const viewMode = ref<'table' | 'grid'>('table')
 
 // Remoção
 const removalRequests = ref<any[]>([])
