@@ -92,6 +92,7 @@ definePageMeta({
 const route = useRoute()
 const showScrollTop = ref(false)
 
+// SSR Fetch
 const { data: document, pending } = await useAsyncData(`document-text-${route.params.slug}`, () => 
   $fetch(`/api/documents/${route.params.slug}`)
 )
