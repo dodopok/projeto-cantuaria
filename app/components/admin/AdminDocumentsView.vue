@@ -40,7 +40,7 @@
                 <span class="text-[7px] px-1.5 py-0.5 bg-cantuaria-oxford/5 text-cantuaria-oxford/60 uppercase tracking-widest font-bold rounded-sm">{{ item.type }}</span>
                 <span class="text-[7px] text-cantuaria-charcoal/30 uppercase font-bold">{{ new Date(item.created_at).toLocaleDateString() }}</span>
               </div>
-              <div v-if="item.content_markdown" class="flex items-center" title="Possui transcrição Markdown">
+              <div v-if="item.has_markdown" class="flex items-center" title="Possui transcrição Markdown">
                 <LucideScanText class="w-3 h-3 text-cantuaria-gold" />
               </div>
             </div>
@@ -85,7 +85,7 @@
                 </div>
               </td>
               <td class="px-6 py-6">
-                <div v-if="item.content_markdown" class="flex items-center gap-2 text-cantuaria-gold" title="Documento Transcrito">
+                <div v-if="item.has_markdown" class="flex items-center gap-2 text-cantuaria-gold" title="Documento Transcrito">
                   <LucideScanText class="w-4 h-4" />
                   <span class="text-[8px] uppercase font-bold">Markdown</span>
                 </div>

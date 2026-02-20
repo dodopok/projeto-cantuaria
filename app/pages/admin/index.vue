@@ -228,7 +228,11 @@ const fetchData = async () => {
     loading.value = false
     return
   }
-  let query = supabase.from('documents').select('*, authors(name), categories(name), tags(name)', { count: 'exact' }).eq('status', currentTab.value)
+  
+  // Seleção otimizada para listagem (usando a coluna virtual has_markdown)
+  const optimizedSelect = 'id, title, slug, type, thumbnail_url, publication_year, language, created_at, status, has_markdown, authors(name), categories(name), tags(name)'
+  
+  let query = supabase.from('documents').select(optimizedSelect, { count: 'exact' }).eq('status', currentTab.value)
   if (searchQuery.value) query = query.textSearch('search_vector', searchQuery.value, { config: 'portuguese', type: 'websearch' })
   
   if (filterNoMarkdown.value) query = query.is('content_markdown', null)
@@ -259,7 +263,24 @@ watchDebounced(searchQuery, () => { currentPage.value = 0; fetchData() }, { debo
 watch([currentPage, pageSize, orderBy, currentTab, filterNoMarkdown, filterNoCover], () => { fetchData() })
 
 const toggleAll = () => { selectedIds.value = allSelected.value ? [] : items.value.map(i => i.id) }
-const openReview = (item: any) => { editingItem.value = JSON.parse(JSON.stringify(item)) }
+const openReview = async (item: any) => {
+  loading.value = true
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*, authors(name), categories(name), tags(name)')
+      .eq('id', item.id)
+      .single()
+    if (data) {
+      editingItem.value = {
+        ...data,
+        authors_list: data.authors?.map((a: any) => a.name).join(', '), 
+        tags_list: data.tags?.map((t: any) => t.name).join(', '), 
+        category_name: data.categories?.name 
+      }
+    }
+  } finally { loading.value = false }
+}
 
 const generateInstitutionalCover = async () => {
   if (!editingItem.value.title) return; uploadingCover.value = true
