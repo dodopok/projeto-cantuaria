@@ -176,10 +176,17 @@
             <div class="w-full lg:w-1/2 overflow-y-auto p-8 lg:p-12 space-y-10" :class="{ 'opacity-50 pointer-events-none': publishing }">
               <div class="flex justify-between items-center border-b border-cantuaria-oxford/5 pb-6">
                 <h4 class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">Dados da Obra</h4>
-                <button @click="analyzeWithAI" :disabled="analyzing || publishing" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50">
-                  <LucideSparkles class="w-3.5 h-3.5" :class="{ 'animate-spin': analyzing }" />
-                  {{ analyzing ? 'Analisando...' : 'Re-analisar com IA' }}
-                </button>
+                <div class="flex gap-2">
+                  <button v-if="editingItem.file_url?.toLowerCase().endsWith('.pdf')" @click="runOCRAnalysis" :disabled="analyzing || publishing || performingOCR" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-gold text-cantuaria-gold text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-gold hover:text-white transition-all disabled:opacity-50">
+                    <LucideLoader2 v-if="performingOCR" class="w-3.5 h-3.5 animate-spin" />
+                    <LucideSparkles v-else class="w-3.5 h-3.5" />
+                    {{ performingOCR ? 'Extraindo Texto...' : 'Análise com OCR' }}
+                  </button>
+                  <button @click="analyzeWithAI()" :disabled="analyzing || publishing || performingOCR" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50">
+                    <LucideSparkles class="w-3.5 h-3.5" :class="{ 'animate-spin': analyzing }" />
+                    {{ analyzing ? 'Analisando...' : 'Re-analisar com IA' }}
+                  </button>
+                </div>
               </div>
 
               <!-- Cover & Details -->
@@ -264,6 +271,7 @@ const analyzing = ref(false)
 const publishing = ref(false)
 const uploadingCover = ref(false)
 const capturingPdf = ref(false)
+const performingOCR = ref(false)
 
 const selectedIds = ref<string[]>([])
 const allSelected = computed(() => items.value.length > 0 && selectedIds.value.length === items.value.length)
@@ -385,13 +393,62 @@ const handleCoverUpload = async (e: any) => {
   } finally { uploadingCover.value = false }
 }
 
-const analyzeWithAI = async () => {
+const analyzeWithAI = async (ocrText?: string) => {
   analyzing.value = true
   try {
-    const analysis: any = await $fetch('/api/analyze', { method: 'POST', body: { documentId: editingItem.value.id, fileUrl: editingItem.value.file_url, filename: editingItem.value.title } })
+    const analysis: any = await $fetch('/api/analyze', { 
+      method: 'POST', 
+      body: { 
+        documentId: editingItem.value.id, 
+        fileUrl: editingItem.value.file_url, 
+        filename: editingItem.value.title,
+        ocrText: ocrText
+      } 
+    })
     editingItem.value = { ...editingItem.value, ...analysis }
     updateSlugSuggestion()
   } finally { analyzing.value = false }
+}
+
+const runOCRAnalysis = async () => {
+  if (!editingItem.value.file_url || !process.client) return;
+  performingOCR.value = true
+  try {
+    const pdfjs = await import('pdfjs-dist')
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+    
+    const loadingTask = pdfjs.getDocument({ url: editingItem.value.file_url, disableFontFace: true })
+    const pdf = await loadingTask.promise
+    
+    const numPagesToOCR = Math.min(pdf.numPages, 3) 
+    let fullOcrText = ""
+
+    const { createWorker } = await import('tesseract.js')
+    const worker = await createWorker('por')
+
+    for (let i = 1; i <= numPagesToOCR; i++) {
+      const page = await pdf.getPage(i)
+      const viewport = page.getViewport({ scale: 2.0 })
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
+      canvas.height = viewport.height
+      canvas.width = viewport.width
+      
+      await page.render({ canvasContext: context!, viewport }).promise
+      
+      const { data: { text } } = await worker.recognize(canvas)
+      fullOcrText += text + "\n\n"
+    }
+
+    await worker.terminate()
+    await analyzeWithAI(fullOcrText)
+    
+  } catch (err) {
+    console.error('Erro no OCR:', err)
+    alert('Erro ao realizar OCR. Verifique o acesso do arquivo.')
+  } finally {
+    performingOCR.value = false
+  }
 }
 
 const deleteItem = async (item: any) => { 

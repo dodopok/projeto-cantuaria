@@ -3,7 +3,7 @@ import { extractText } from 'unpdf'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { filename, documentId, fileUrl } = body
+  const { filename, documentId, fileUrl, ocrText } = body
   const config = useRuntimeConfig()
   
   const PERPLEXITY_API_KEY = config.perplexityApiKey || process.env.PERPLEXITY_API_KEY
@@ -12,17 +12,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'API Key do Perplexity não configurada.' })
   }
 
-  let extractedText: string = ''
+  let extractedText: string = ocrText || ''
 
   try {
-    if (fileUrl && fileUrl.toLowerCase().endsWith('.pdf')) {
+    if (!extractedText && fileUrl && fileUrl.toLowerCase().endsWith('.pdf')) {
       console.log(`[IA] Baixando arquivo para extração: ${filename}`)
       const response = await $fetch.raw(fileUrl)
       const arrayBuffer = await (response._data as any).arrayBuffer()
       
       try {
         const result = await extractText(arrayBuffer)
-        // Garante que o texto seja uma string, tratando arrays ou objetos inesperados
         extractedText = typeof result.text === 'string' ? result.text : String(result.text || '')
         console.log(`[IA] Texto extraído com sucesso (${extractedText.length} caracteres)`)
       } catch (pdfError: any) {
@@ -31,10 +30,10 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Se falhou ou não é PDF, usa fallback
+    // Se falhou ou não é PDF, usa fallback ou o que foi enviado via OCR
     const textForIA = extractedText && extractedText.length > 10 
       ? extractedText 
-      : `(Texto não extraível. Nome do arquivo: ${filename})`
+      : `(Texto não extraível diretamente. Nome do arquivo: ${filename})`
 
     const prompt = `
       CONTEXTO FUNDAMENTAL:
