@@ -32,33 +32,40 @@
           <LucideLoader2 class="w-10 h-10 animate-spin mx-auto text-cantuaria-oxford/20" />
         </div>
 
-        <AdminRemovalRequests 
-          v-else-if="currentTab === 'removal'"
-          :requests="removalRequests"
-          @handle-removal="handleRemoval"
-        />
+        <div v-else class="relative">
+          <!-- Overlay de carregamento para detalhes -->
+          <div v-if="loadingDetails" class="absolute inset-0 z-20 bg-white/50 backdrop-blur-[1px] flex items-center justify-center">
+            <LucideLoader2 class="w-8 h-8 animate-spin text-cantuaria-oxford" />
+          </div>
 
-        <AdminPublicationsList 
-          v-else-if="currentTab === 'publications'"
-          :publications="publications"
-          @open-new="openNewPublication"
-          @open-edit="openEditPublication"
-          @delete="deletePublication"
-        />
+          <AdminRemovalRequests 
+            v-if="currentTab === 'removal'"
+            :requests="removalRequests"
+            @handle-removal="handleRemoval"
+          />
 
-        <AdminDocumentsView 
-          v-else
-          :items="items"
-          :view-mode="viewMode"
-          v-model:selected-ids="selectedIds"
-          v-model:current-page="currentPage"
-          :all-selected="allSelected"
-          :total-items="totalItems"
-          :page-size="pageSize"
-          @open-review="openReview"
-          @delete="deleteItem"
-          @toggle-all="toggleAll"
-        />
+          <AdminPublicationsList 
+            v-else-if="currentTab === 'publications'"
+            :publications="publications"
+            @open-new="openNewPublication"
+            @open-edit="openEditPublication"
+            @delete="deletePublication"
+          />
+
+          <AdminDocumentsView 
+            v-else
+            :items="items"
+            :view-mode="viewMode"
+            v-model:selected-ids="selectedIds"
+            v-model:current-page="currentPage"
+            :all-selected="allSelected"
+            :total-items="totalItems"
+            :page-size="pageSize"
+            @open-review="openReview"
+            @delete="deleteItem"
+            @toggle-all="toggleAll"
+          />
+        </div>
       </section>
 
       <AdminBatchAnalysisModal 
@@ -136,6 +143,7 @@ definePageMeta({ middleware: 'admin' })
 
 const supabase = useSupabaseClient()
 const loading = ref(true)
+const loadingDetails = ref(false)
 const currentTab = ref<'pending' | 'published' | 'removal' | 'publications'>('pending')
 const items = ref<any[]>([])
 const pendingCount = ref(0)
@@ -264,7 +272,7 @@ watch([currentPage, pageSize, orderBy, currentTab, filterNoMarkdown, filterNoCov
 
 const toggleAll = () => { selectedIds.value = allSelected.value ? [] : items.value.map(i => i.id) }
 const openReview = async (item: any) => {
-  loading.value = true
+  loadingDetails.value = true
   try {
     const { data, error } = await supabase
       .from('documents')
@@ -279,7 +287,7 @@ const openReview = async (item: any) => {
         category_name: data.categories?.name 
       }
     }
-  } finally { loading.value = false }
+  } finally { loadingDetails.value = false }
 }
 
 const generateInstitutionalCover = async () => {
@@ -380,7 +388,26 @@ const publish = async () => {
   publishing.value = true
   try { 
     await $fetch('/api/documents/publish', { method: 'POST', body: { id: editingItem.value.id, data: editingItem.value } })
-    editingItem.value = null; await fetchData() 
+    
+    // Atualização local otimizada
+    const index = items.value.findIndex(i => i.id === editingItem.value.id)
+    if (index !== -1) {
+      if (currentTab.value === 'pending') {
+        // Se saiu de pendente, remove da lista
+        items.value.splice(index, 1)
+        totalItems.value--
+        pendingCount.value--
+      } else {
+        // Se já estava em publicado, atualiza os dados
+        items.value[index] = { 
+          ...items.value[index], 
+          ...editingItem.value,
+          has_markdown: !!editingItem.value.content_markdown
+        }
+      }
+    }
+    
+    editingItem.value = null
   } catch (err) { alert('Erro ao publicar documento.') } finally { publishing.value = false } 
 }
 
