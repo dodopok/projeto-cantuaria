@@ -22,7 +22,7 @@
         
         <!-- Sidebar de Filtros -->
         <aside class="w-full lg:w-80 shrink-0">
-          <div class="lg:sticky lg:top-8 bg-white border border-cantuaria-oxford/5 shadow-[0_10px_30px_-15px_rgba(0,33,71,0.05)] p-8 relative overflow-hidden">
+          <div class="lg:sticky lg:top-28 bg-white border border-cantuaria-oxford/5 shadow-[0_10px_30px_-15px_rgba(0,33,71,0.05)] p-8 relative overflow-hidden">
             <!-- Detalhe decorativo superior em ouro -->
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cantuaria-gold/0 via-cantuaria-gold/40 to-cantuaria-gold/0"></div>
             
@@ -58,21 +58,6 @@
                     </div>
                     <span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 group-hover:text-cantuaria-oxford transition-colors">{{ type }}</span>
                   </label>
-                </div>
-              </div>
-
-              <!-- Categorias -->
-              <div v-if="categories.length > 0" class="space-y-6">
-                <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-4">Temáticas</h4>
-                <div class="flex flex-wrap gap-2">
-                  <button 
-                    v-for="cat in categories" 
-                    :key="cat.id" 
-                    @click="toggleCategory(cat.slug)"
-                    :class="['px-3 py-2 text-[9px] uppercase tracking-widest font-bold border transition-all duration-300', filterCategory === cat.slug ? 'bg-cantuaria-oxford text-white border-cantuaria-oxford shadow-md' : 'bg-white text-cantuaria-charcoal/40 border-cantuaria-oxford/5 hover:border-cantuaria-gold hover:text-cantuaria-gold']"
-                  >
-                    {{ cat.name }}
-                  </button>
                 </div>
               </div>
 

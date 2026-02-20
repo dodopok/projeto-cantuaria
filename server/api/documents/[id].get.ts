@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await adminSupabase
     .from('documents')
-    .select('*, authors(*), categories(*)')
+    .select('*, authors(*), categories(*), tags(*)')
     .eq('slug', cleanSlug)
     .maybeSingle()
 

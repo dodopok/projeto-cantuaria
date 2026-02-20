@@ -26,6 +26,7 @@
       <p class="font-sans text-xs text-cantuaria-charcoal/50 uppercase tracking-wider">
         {{ authorsText }}
       </p>
+      
       <div class="flex items-center gap-3 pt-2">
         <span class="text-[10px] text-cantuaria-charcoal/30 italic font-serif">
           {{ document.publication_year || 'Séc. XIX' }}

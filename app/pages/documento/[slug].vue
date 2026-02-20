@@ -120,10 +120,23 @@
                 {{ document.title }}
               </h1>
               
-              <div class="flex flex-wrap items-center gap-6 mb-8 pb-8 border-b border-cantuaria-oxford/10">
-                <div v-for="author in document.authors" :key="author.id" class="flex flex-col">
-                  <span class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 mb-1">Autor</span>
-                  <span class="font-serif text-xl text-cantuaria-oxford leading-none">{{ author.name }}</span>
+              <div class="flex flex-col gap-6 mb-8 pb-8 border-b border-cantuaria-oxford/10">
+                <div class="flex flex-wrap items-center gap-6">
+                  <div v-for="author in document.authors" :key="author.id" class="flex flex-col">
+                    <span class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 mb-1">Autor</span>
+                    <span class="font-serif text-xl text-cantuaria-oxford leading-none">{{ author.name }}</span>
+                  </div>
+                </div>
+
+                <!-- Tags do Documento -->
+                <div v-if="document.tags && document.tags.length > 0" class="flex flex-wrap gap-2">
+                  <span 
+                    v-for="tag in document.tags" 
+                    :key="tag.id"
+                    class="px-3 py-1 bg-cantuaria-gold/5 border border-cantuaria-gold/10 text-cantuaria-gold text-[9px] uppercase tracking-widest font-bold rounded-full"
+                  >
+                    {{ tag.name }}
+                  </span>
                 </div>
               </div>
 
