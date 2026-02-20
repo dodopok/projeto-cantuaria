@@ -67,28 +67,31 @@ export default defineEventHandler(async (event) => {
     }
 
     // 5. Invalidação de Cache (Nitro/SWR)
-    // Limpamos o cache das rotas que listam documentos para que a mudança apareça na hora
     try {
       const storage = useStorage('cache')
       const keys = await storage.getKeys()
       
-      // Filtramos chaves que correspondem às nossas rotas principais e APIs de listagem
-      // O Nitro armazena como nitro:handlers:_:...
-      const keysToPurge = keys.filter(key => 
-        key.includes('handlers:_:index') || 
-        key.includes('handlers:_:biblioteca') ||
-        key.includes('handlers:_:api:documents') ||
-        key.includes('handlers:_:api:authors') ||
-        key.includes('handlers:_:api:categories')
-      )
+      // Filtro mais robusto para as rotas do Projeto Cantuária
+      const keysToPurge = keys.filter(key => {
+        const k = key.toLowerCase()
+        return k.includes('index') || 
+               k.includes('biblioteca') || 
+               k.includes('api:documents') || 
+               k.includes('api:authors') || 
+               k.includes('api:categories') ||
+               k.includes('_payload') // Payload de dados do Nuxt 3
+      })
 
       for (const key of keysToPurge) {
         await storage.removeItem(key)
       }
-      console.log(`[Cache] Invalidadas ${keysToPurge.length} chaves de cache devido à atualização de documento.`)
+      
+      // Log informativo (visível no terminal do servidor)
+      console.log(`[Cache Purge] Total de chaves no storage: ${keys.length}`)
+      console.log(`[Cache Purge] Invalidadas ${keysToPurge.length} chaves:`, keysToPurge)
+      
     } catch (cacheErr) {
       console.error('[Cache] Erro ao limpar cache:', cacheErr)
-      // Não travamos a resposta se o cache falhar
     }
 
     return { success: true }
