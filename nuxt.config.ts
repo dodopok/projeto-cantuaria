@@ -53,6 +53,10 @@ export default defineNuxtConfig({
     '/api/categories': { cache: { maxAge: 3600 } },
     '/api/authors': { cache: { maxAge: 3600 } },
     '/api/documents': { cache: { maxAge: 600 } },
+    // Explicitly disable cache for write operations
+    '/api/documents/publish': { cache: false },
+    '/api/documents/batch-delete': { cache: false },
+    '/api/documents/request-removal': { cache: false },
     '/api/documents/**': { cache: { maxAge: 3600 } },
     
     // Document Pages (SWR for better SEO)
