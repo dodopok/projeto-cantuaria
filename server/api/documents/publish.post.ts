@@ -66,6 +66,31 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // 5. Invalidação de Cache (Nitro/SWR)
+    // Limpamos o cache das rotas que listam documentos para que a mudança apareça na hora
+    try {
+      const storage = useStorage('cache')
+      const keys = await storage.getKeys()
+      
+      // Filtramos chaves que correspondem às nossas rotas principais e APIs de listagem
+      // O Nitro armazena como nitro:handlers:_:...
+      const keysToPurge = keys.filter(key => 
+        key.includes('handlers:_:index') || 
+        key.includes('handlers:_:biblioteca') ||
+        key.includes('handlers:_:api:documents') ||
+        key.includes('handlers:_:api:authors') ||
+        key.includes('handlers:_:api:categories')
+      )
+
+      for (const key of keysToPurge) {
+        await storage.removeItem(key)
+      }
+      console.log(`[Cache] Invalidadas ${keysToPurge.length} chaves de cache devido à atualização de documento.`)
+    } catch (cacheErr) {
+      console.error('[Cache] Erro ao limpar cache:', cacheErr)
+      // Não travamos a resposta se o cache falhar
+    }
+
     return { success: true }
   } catch (error: any) {
     console.error('[API Publish] Erro:', error)

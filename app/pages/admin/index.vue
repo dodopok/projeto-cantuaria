@@ -252,12 +252,40 @@
           </div>
         </div>
       </div>
+
+      <!-- Crop Modal -->
+      <div v-if="showCropModal" class="fixed inset-0 z-[150] bg-cantuaria-oxford/98 backdrop-blur-xl flex flex-col items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col h-[80vh]">
+          <header class="p-6 border-b border-cantuaria-charcoal/5 flex justify-between items-center">
+            <h3 class="font-serif text-xl text-cantuaria-oxford">Ajustar Capa</h3>
+            <button @click="showCropModal = false" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-5 h-5" /></button>
+          </header>
+          
+          <div class="flex-grow bg-cantuaria-charcoal overflow-hidden flex items-center justify-center p-4">
+            <img ref="cropImgRef" :src="croppingImage" class="max-w-full max-h-full block" />
+          </div>
+
+          <footer class="p-6 border-t border-cantuaria-charcoal/5 flex justify-between items-center bg-cantuaria-cream/30">
+            <div class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">
+              Arraste e redimensione para definir a capa (Proporção 3:4.5)
+            </div>
+            <div class="flex gap-4">
+              <button @click="showCropModal = false" class="px-6 py-2 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">Cancelar</button>
+              <button @click="confirmCrop" :disabled="uploadingCover" class="px-10 py-3 bg-cantuaria-gold text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-gold/90 transition-all shadow-lg disabled:opacity-50">
+                <template v-if="uploadingCover"><LucideLoader2 class="w-4 h-4 animate-spin inline mr-2" /> Enviando...</template>
+                <template v-else>Confirmar Capa</template>
+              </button>
+            </div>
+          </footer>
+        </div>
+      </div>
     </div>
   </NuxtLayout>
 </template>
 
 <script setup lang="ts">
 import { ShieldCheck as LucideShieldCheck, FileText as LucideFileText, Sparkles as LucideSparkles, X as LucideX, Image as LucideImage, Loader2 as LucideLoader2, CheckCircle as LucideCheckCircle, Trash2 as LucideTrash2 } from 'lucide-vue-next'
+import 'cropperjs/dist/cropper.css'
 
 definePageMeta({ middleware: 'admin' })
 
@@ -272,6 +300,12 @@ const publishing = ref(false)
 const uploadingCover = ref(false)
 const capturingPdf = ref(false)
 const performingOCR = ref(false)
+
+// Crop related
+const showCropModal = ref(false)
+const croppingImage = ref('')
+const cropImgRef = ref<HTMLImageElement | null>(null)
+let cropperInstance: any = null
 
 const selectedIds = ref<string[]>([])
 const allSelected = computed(() => items.value.length > 0 && selectedIds.value.length === items.value.length)
@@ -329,11 +363,44 @@ const capturePdfCover = async () => {
     const loadingTask = pdfjs.getDocument({ url: editingItem.value.file_url, disableFontFace: true })
     const pdf = await loadingTask.promise
     const page = await pdf.getPage(1)
-    const viewport = page.getViewport({ scale: 1.0 })
+    const viewport = page.getViewport({ scale: 2.0 })
     const canvas = document.createElement('canvas'); const context = canvas.getContext('2d')
     canvas.height = viewport.height; canvas.width = viewport.width
     await page.render({ canvasContext: context!, viewport }).promise
-    const blob = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/jpeg', 0.8))
+    
+    croppingImage.value = canvas.toDataURL('image/jpeg', 0.9)
+    showCropModal.value = true
+    
+    const Cropper = (await import('cropperjs')).default
+    nextTick(() => {
+      if (cropperInstance) cropperInstance.destroy()
+      cropperInstance = new Cropper(cropImgRef.value!, {
+        aspectRatio: 3 / 4.5,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 1,
+        background: false,
+      })
+    })
+  } catch (err) { 
+    console.error('Erro na captura:', err)
+    alert('Erro na captura. Verifique o acesso CORS do arquivo.') 
+  } finally { 
+    capturingPdf.value = false 
+  }
+}
+
+const confirmCrop = async () => {
+  if (!cropperInstance) return
+  uploadingCover.value = true
+  
+  try {
+    const canvas = cropperInstance.getCroppedCanvas({
+      width: 600,
+      height: 900,
+    })
+    
+    const blob = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/jpeg', 0.85))
     const fileName = `covers/pdf-capture-${Date.now()}.jpg`
     const { error } = await supabase.storage.from('covers').upload(fileName, blob)
     if (error) throw error
@@ -348,11 +415,12 @@ const capturePdfCover = async () => {
     })
 
     editingItem.value.thumbnail_url = publicUrl
-  } catch (err) { 
-    console.error('Erro na captura:', err)
-    alert('Erro na captura. Verifique o acesso CORS do arquivo.') 
-  } finally { 
-    capturingPdf.value = false 
+    showCropModal.value = false
+  } catch (err) {
+    console.error('Erro ao salvar recorte:', err)
+    alert('Erro ao salvar o recorte da imagem.')
+  } finally {
+    uploadingCover.value = false
   }
 }
 
@@ -397,14 +465,25 @@ const publish = async () => {
 }
 
 const handleCoverUpload = async (e: any) => {
-  const file = e.target.files[0]; if (!file) return; uploadingCover.value = true
-  try {
-    const fileName = `covers/${Date.now()}-${file.name}`
-    const { error } = await supabase.storage.from('covers').upload(fileName, file)
-    if (error) throw error
-    const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(fileName)
-    editingItem.value.thumbnail_url = publicUrl
-  } finally { uploadingCover.value = false }
+  const file = e.target.files[0]; if (!file) return; 
+  
+  const reader = new FileReader()
+  const Cropper = (await import('cropperjs')).default
+  reader.onload = (event) => {
+    croppingImage.value = event.target?.result as string
+    showCropModal.value = true
+    nextTick(() => {
+      if (cropperInstance) cropperInstance.destroy()
+      cropperInstance = new Cropper(cropImgRef.value!, {
+        aspectRatio: 3 / 4.5,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 1,
+        background: false,
+      })
+    })
+  }
+  reader.readAsDataURL(file)
 }
 
 const analyzeWithAI = async (ocrText?: string) => {
