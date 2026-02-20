@@ -17,9 +17,10 @@
 
     <section class="py-6 bg-cantuaria-cream">
       <div class="container mx-auto px-6">
-        <div v-if="success" class="max-w-2xl mx-auto text-center py-20 animate-fade-in">
+        <div v-if="allFinished && successCount > 0" class="max-w-2xl mx-auto text-center py-20 animate-fade-in">
           <LucideCheckCircle class="w-20 h-20 text-cantuaria-gold mx-auto mb-8" />
-          <h2 class="text-4xl font-serif text-cantuaria-oxford mb-4">Arquivos enviados com sucesso!</h2>
+          <h2 class="text-4xl font-serif text-cantuaria-oxford mb-4">{{ successCount }} arquivos enviados com sucesso!</h2>
+          <p v-if="errorCount > 0" class="text-cantuaria-crimson mb-6 font-bold">Nota: {{ errorCount }} arquivos falharam no processo.</p>
           <p class="text-cantuaria-charcoal/60 mb-10 leading-relaxed">
             Muito obrigado por sua contribuição. Os documentos já estão na nossa fila de curadoria.
           </p>
@@ -29,6 +30,7 @@
         <div v-else class="max-w-4xl mx-auto">
           <!-- Dropzone -->
           <div 
+            v-if="!isUploading"
             @click="($refs.fileInput as HTMLInputElement).click()"
             @dragover.prevent="isDragging = true"
             @dragleave.prevent="isDragging = false"
@@ -46,64 +48,57 @@
               </div>
               <h3 class="text-xl font-serif text-cantuaria-oxford mb-2">Arraste seus arquivos aqui</h3>
               <p class="text-sm text-cantuaria-charcoal/40 font-medium">Ou <span class="text-cantuaria-oxford underline">clique para selecionar do computador</span></p>
-              <p class="text-[10px] text-cantuaria-charcoal/30 uppercase tracking-widest mt-4 font-bold">PDF, EPUB ou DOCX</p>
+              <p class="text-[10px] text-cantuaria-charcoal/30 uppercase tracking-widest mt-4 font-bold">PDF, EPUB ou DOCX (Máx 50MB por arquivo)</p>
             </div>
           </div>
 
-          <!-- Selected Files List -->
-          <div v-if="selectedFiles.length > 0" id="file-list" ref="listRef" class="mt-12 space-y-4 animate-fade-in">
-            <div class="flex justify-between items-center mb-6">
-              <h4 class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">Arquivos Selecionados ({{ selectedFiles.length }})</h4>
-              <button @click="selectedFiles = []" class="text-[10px] uppercase font-bold text-cantuaria-crimson hover:underline">Limpar Tudo</button>
+          <!-- Upload Status View -->
+          <div v-if="filesStatus.length > 0" id="file-list" class="mt-12 space-y-6 animate-fade-in">
+            <div class="flex justify-between items-center">
+              <h4 class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">Fila de Envio ({{ filesStatus.length }})</h4>
+              <button v-if="!isUploading" @click="clearList" class="text-[10px] uppercase font-bold text-cantuaria-crimson hover:underline">Limpar Tudo</button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              <div v-for="(file, idx) in selectedFiles" :key="idx" class="flex items-center justify-between p-4 bg-white border border-cantuaria-charcoal/5 shadow-sm">
-                <div class="flex items-center gap-3 truncate">
-                  <LucideFileText class="w-5 h-5 text-cantuaria-oxford/20" />
-                  <div class="truncate">
-                    <p class="text-sm font-bold text-cantuaria-oxford truncate">{{ file.name }}</p>
-                    <p class="text-[10px] text-cantuaria-charcoal/40 uppercase">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</p>
+            <div class="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+              <div v-for="(file, idx) in filesStatus" :key="idx" 
+                class="bg-white border p-4 shadow-sm transition-all flex flex-col gap-3"
+                :class="[
+                  file.status === 'success' ? 'border-green-100 bg-green-50/10' : 
+                  file.status === 'error' ? 'border-red-100 bg-red-50/10' : 'border-cantuaria-charcoal/5'
+                ]"
+              >
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-3 truncate">
+                    <LucideFileText class="w-5 h-5" :class="file.status === 'success' ? 'text-green-500' : file.status === 'error' ? 'text-red-500' : 'text-cantuaria-oxford/20'" />
+                    <div class="truncate">
+                      <p class="text-sm font-bold text-cantuaria-oxford truncate">{{ file.name }}</p>
+                      <p class="text-[10px] text-cantuaria-charcoal/40 uppercase">{{ (file.size / 1024 / 1024).toFixed(2) }} MB</p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center gap-3 shrink-0">
+                    <span v-if="file.status === 'processing'" class="text-[8px] uppercase font-bold text-cantuaria-gold animate-pulse">Enviando...</span>
+                    <span v-if="file.status === 'success'" class="text-[8px] uppercase font-bold text-green-600 flex items-center gap-1"><LucideCheck class="w-3 h-3" /> Concluído</span>
+                    <span v-if="file.status === 'error'" class="text-[8px] uppercase font-bold text-red-600" :title="file.error">{{ file.error }}</span>
+                    <button v-if="file.status === 'idle' && !isUploading" @click="removeFile(idx)" class="p-1 hover:text-cantuaria-crimson text-cantuaria-charcoal/20 transition-colors"><LucideX class="w-4 h-4" /></button>
                   </div>
                 </div>
-                <button @click.stop="removeFile(idx)" class="p-2 hover:bg-cantuaria-crimson/5 text-cantuaria-charcoal/20 hover:text-cantuaria-crimson transition-colors">
-                  <LucideX class="w-4 h-4" />
-                </button>
+
+                <!-- Progress Bar Individual -->
+                <div v-if="file.status === 'processing'" class="h-1 bg-cantuaria-oxford/5 w-full overflow-hidden rounded-full">
+                  <div class="h-full bg-cantuaria-gold animate-progress-indefinite"></div>
+                </div>
               </div>
             </div>
 
-            <div v-if="duplicatesFound.length > 0" class="p-4 bg-amber-50 border border-cantuaria-gold/20 rounded">
-              <div class="flex items-center gap-3 text-amber-800 mb-2 font-bold text-xs">
-                <LucideAlertTriangle class="w-4 h-4" />
-                Arquivos já existentes no acervo:
-              </div>
-              <ul class="text-[10px] text-amber-700 list-disc list-inside">
-                <li v-for="name in duplicatesFound" :key="name">{{ name }}</li>
-              </ul>
-              <p class="mt-2 text-[9px] text-amber-600 uppercase font-bold">Eles serão ignorados no envio.</p>
-            </div>
-
-            <div v-if="error" class="text-sm text-cantuaria-crimson font-medium bg-cantuaria-crimson/5 p-4 rounded border border-cantuaria-crimson/10 mt-8">
-              {{ error }}
-            </div>
-
-            <div class="pt-12">
+            <div v-if="!isUploading" class="pt-8">
               <button 
-                @click="handleSubmit" 
-                :disabled="uploading || (selectedFiles.length === duplicatesFound.length)"
+                @click="startUploadFlow" 
+                :disabled="idleFilesCount === 0"
                 class="w-full py-6 bg-cantuaria-oxford text-white font-bold uppercase tracking-[0.3em] text-xs hover:bg-cantuaria-oxford/90 shadow-2xl transition-all active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-4"
               >
-                <template v-if="uploading">
-                  <LucideLoader2 class="w-5 h-5 animate-spin" />
-                  Enviando {{ currentUploadIndex + 1 }} de {{ selectedFiles.length - duplicatesFound.length }}...
-                </template>
-                <template v-else>
-                  Confirmar Envio de {{ selectedFiles.length - duplicatesFound.length }} Arquivos
-                </template>
+                <span>Enviar {{ idleFilesCount }} Arquivos</span>
               </button>
-              <p class="text-center text-[10px] text-cantuaria-charcoal/30 uppercase tracking-widest mt-8 italic">
-                "O conhecimento é a luz que não se apaga."
-              </p>
             </div>
           </div>
         </div>
@@ -119,26 +114,28 @@ import {
   CheckCircle as LucideCheckCircle,
   Loader2 as LucideLoader2,
   X as LucideX,
-  AlertTriangle as LucideAlertTriangle
+  Check as LucideCheck
 } from 'lucide-vue-next'
 
-const supabase = useSupabaseClient()
-const uploading = ref(false)
-const success = ref(false)
-const error = ref<string | null>(null)
-const selectedFiles = ref<File[]>([])
-const duplicatesFound = ref<string[]>([])
-const isDragging = ref(false)
-const currentUploadIndex = ref(0)
+interface FileEntry {
+  file: File;
+  name: string;
+  size: number;
+  status: 'idle' | 'processing' | 'success' | 'error';
+  error?: string;
+}
 
+const supabase = useSupabaseClient()
+const isDragging = ref(false)
+const isUploading = ref(false)
+const allFinished = ref(false)
+const filesStatus = ref<FileEntry[]>([])
 const topRef = ref<HTMLElement | null>(null)
 
-useSeoMeta({
-  title: 'Contribuir | Projeto Cantuária',
-  description: 'Envie documentos históricos, livros ou artigos para serem preservados em nossa biblioteca digital.'
-})
+const successCount = computed(() => filesStatus.value.filter(f => f.status === 'success').length)
+const errorCount = computed(() => filesStatus.value.filter(f => f.status === 'error').length)
+const idleFilesCount = computed(() => filesStatus.value.filter(f => f.status === 'idle').length)
 
-// Função para calcular SHA-256 do arquivo (DNA do conteúdo)
 const calculateHash = async (file: File) => {
   const buffer = await file.arrayBuffer()
   const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
@@ -146,88 +143,86 @@ const calculateHash = async (file: File) => {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-const slugify = (text: string) => {
-  return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-')
-}
+const slugify = (text: string) => text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-')
 
-const handleFileSelect = (e: any) => {
-  const files = Array.from(e.target.files) as File[]
-  addFiles(files)
-}
-
+const handleFileSelect = (e: any) => addFiles(Array.from(e.target.files) as File[])
 const handleDrop = (e: DragEvent) => {
   isDragging.value = false
-  if (e.dataTransfer?.files) {
-    const files = Array.from(e.dataTransfer.files) as File[]
-    addFiles(files)
-  }
+  if (e.dataTransfer?.files) addFiles(Array.from(e.dataTransfer.files) as File[])
 }
 
-const addFiles = async (newFiles: File[]) => {
+const addFiles = (newFiles: File[]) => {
   const allowedExts = ['pdf', 'epub', 'docx', 'txt']
-  const filtered = newFiles.filter(f => {
+  const maxSizeBytes = 50 * 1024 * 1024 // 50MB
+
+  newFiles.forEach(f => {
     const ext = f.name.split('.').pop()?.toLowerCase()
-    return ext && allowedExts.includes(ext)
-  })
-  
-  selectedFiles.value = [...selectedFiles.value, ...filtered]
-  error.value = null
-  duplicatesFound.value = []
+    let initialStatus: any = 'idle'
+    let initialError = ''
 
-  // Verificar duplicatas no banco via Hash
-  for (const file of selectedFiles.value) {
-    const hash = await calculateHash(file)
-    const { data } = await supabase.from('documents').select('title').eq('file_hash', hash).maybeSingle()
-    if (data) {
-      duplicatesFound.value.push(file.name)
+    if (!ext || !allowedExts.includes(ext)) {
+      initialStatus = 'error'
+      initialError = 'Formato não suportado'
+    } else if (f.size > maxSizeBytes) {
+      initialStatus = 'error'
+      initialError = 'Arquivo muito grande (Máx 50MB)'
     }
-  }
 
-  if (filtered.length > 0) {
-    nextTick(() => {
-      const el = document.getElementById('file-list')
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    filesStatus.value.push({
+      file: f,
+      name: f.name,
+      size: f.size,
+      status: initialStatus,
+      error: initialError
     })
-  }
+  })
+
+  nextTick(() => {
+    document.getElementById('file-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
 }
 
-const removeFile = (index: number) => {
-  const name = selectedFiles.value[index].name
-  selectedFiles.value.splice(index, 1)
-  duplicatesFound.value = duplicatesFound.value.filter(n => n !== name)
-}
-
+const removeFile = (idx: number) => filesStatus.value.splice(idx, 1)
+const clearList = () => filesStatus.value = []
 const resetFlow = () => {
-  success.value = false
-  selectedFiles.value = []
-  duplicatesFound.value = []
-  error.value = null
+  allFinished.value = false
+  filesStatus.value = []
+  isUploading.value = false
   topRef.value?.scrollIntoView({ behavior: 'smooth' })
 }
 
-const handleSubmit = async () => {
-  const filesToUpload = selectedFiles.value.filter(f => !duplicatesFound.value.includes(f.name))
-  if (filesToUpload.length === 0) return
+const startUploadFlow = async () => {
+  isUploading.value = true
+  
+  for (let i = 0; i < filesStatus.value.length; i++) {
+    const entry = filesStatus.value[i]
+    if (entry.status !== 'idle') continue
 
-  uploading.value = true
-  error.value = null
-
-  try {
-    for (let i = 0; i < filesToUpload.length; i++) {
-      currentUploadIndex.value = i
-      const file = filesToUpload[i]
-      const hash = await calculateHash(file)
+    entry.status = 'processing'
+    
+    try {
+      // 1. Verificar Duplicidade
+      const hash = await calculateHash(entry.file)
+      const { data: duplicate } = await supabase.from('documents').select('id').eq('file_hash', hash).maybeSingle()
       
-      const fileExt = file.name.split('.').pop()
+      if (duplicate) {
+        entry.status = 'error'
+        entry.error = 'Arquivo já existe no acervo'
+        continue
+      }
+
+      // 2. Upload para Storage
+      const fileExt = entry.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `uploads/${fileName}`
 
-      const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, file)
-      if (uploadError) throw uploadError
+      const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, entry.file)
+      if (uploadError) throw new Error('Falha no upload do arquivo')
 
       const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath)
 
-      const provTitle = file.name.replace(/\.[^/.]+$/, "")
+      // 3. Inserir no Banco
+      const provTitle = entry.name.replace(/\.[^/.]+$/, "")
       const { error: dbError } = await supabase.from('documents').insert({
         title: provTitle,
         type: 'Documento', 
@@ -237,18 +232,18 @@ const handleSubmit = async () => {
         status: 'pending'
       })
 
-      if (dbError) throw dbError
-    }
+      if (dbError) throw new Error('Falha ao registrar no banco')
 
-    success.value = true
-    nextTick(() => { topRef.value?.scrollIntoView({ behavior: 'smooth' }) })
-  } catch (err) {
-    console.error('Erro no envio múltiplo:', err)
-    error.value = 'Erro ao enviar. Verifique sua conexão.'
-  } finally {
-    uploading.value = false
-    currentUploadIndex.value = 0
+      entry.status = 'success'
+    } catch (err: any) {
+      console.error(`Erro no arquivo ${entry.name}:`, err)
+      entry.status = 'error'
+      entry.error = err.message || 'Erro desconhecido'
+    }
   }
+
+  isUploading.value = false
+  allFinished.value = true
 }
 </script>
 
@@ -258,4 +253,7 @@ const handleSubmit = async () => {
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #C5A059; }
+
+.animate-progress-indefinite { width: 100%; animation: progress-indefinite 2s infinite linear; transform-origin: 0% 50%; }
+@keyframes progress-indefinite { 0% { transform: translateX(0) scaleX(0); } 40% { transform: translateX(0) scaleX(0.4); } 100% { transform: translateX(100%) scaleX(0.5); } }
 </style>
