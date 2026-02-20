@@ -1,13 +1,36 @@
 <template>
-  <div class="w-full h-full bg-white flex flex-col overflow-hidden">
+  <div class="w-full h-full bg-white flex flex-col relative overflow-hidden">
+    <!-- Toolbar de Zoom Mobile -->
+    <div v-if="isMobile && !loadingPdf && url" class="absolute bottom-6 right-6 z-20 flex flex-col gap-2">
+      <button @click="adjustScale(0.2)" class="w-12 h-12 bg-cantuaria-oxford/90 backdrop-blur-md text-white rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform border border-white/10">
+        <LucidePlus class="w-6 h-6" />
+      </button>
+      <button @click="adjustScale(-0.2)" class="w-12 h-12 bg-cantuaria-oxford/90 backdrop-blur-md text-white rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform border border-white/10">
+        <LucideMinus class="w-6 h-6" />
+      </button>
+      <button @click="resetScale" class="w-12 h-12 bg-cantuaria-gold/90 backdrop-blur-md text-cantuaria-oxford rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform border border-white/10">
+        <LucideRotateCcw class="w-5 h-5" />
+      </button>
+    </div>
+
     <!-- Visualizador Mobile (PDF.js) -->
-    <div v-if="isMobile && url && url.endsWith('.pdf')" class="flex-grow overflow-y-auto overflow-x-hidden relative bg-cantuaria-charcoal" style="-webkit-overflow-scrolling: touch;">
+    <div 
+      v-if="isMobile && url && url.endsWith('.pdf')" 
+      class="flex-grow overflow-auto relative bg-cantuaria-charcoal overscroll-contain" 
+      style="-webkit-overflow-scrolling: touch;"
+      @touchstart="handleTouchStart"
+      @touchmove="handleTouchMove"
+    >
       <div v-if="loadingPdf" class="absolute inset-0 flex flex-col items-center justify-center text-white/40 gap-4">
         <LucideLoader2 class="w-8 h-8 animate-spin" />
         <span class="text-[10px] uppercase tracking-widest font-bold">Carregando Obra...</span>
       </div>
       
-      <div v-show="!loadingPdf" class="flex flex-col gap-4 p-2 md:p-4 min-h-full">
+      <div 
+        v-show="!loadingPdf" 
+        class="flex flex-col gap-4 p-2 md:p-4 min-h-full transition-transform duration-200 ease-out origin-top"
+        :style="{ transform: `scale(${scale})`, width: scale > 1 ? `${100 * scale}%` : '100%' }"
+      >
         <canvas v-for="page in pages" :key="page" :ref="el => setPageRef(el, page)" class="w-full h-auto shadow-2xl mx-auto block bg-white"></canvas>
       </div>
     </div>
@@ -36,7 +59,13 @@
 </template>
 
 <script setup>
-import { FileWarning as LucideFileWarning, Loader2 as LucideLoader2 } from 'lucide-vue-next'
+import { 
+  FileWarning as LucideFileWarning, 
+  Loader2 as LucideLoader2,
+  Plus as LucidePlus,
+  Minus as LucideMinus,
+  RotateCcw as LucideRotateCcw
+} from 'lucide-vue-next'
 
 const props = defineProps({
   url: String,
@@ -47,6 +76,31 @@ const isMobile = ref(false)
 const loadingPdf = ref(false)
 const pages = ref([])
 const pageRefs = ref({})
+const scale = ref(1.0)
+
+// Lógica de Pinch-to-zoom
+let initialDist = 0
+const handleTouchStart = (e) => {
+  if (e.touches.length === 2) {
+    initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY)
+  }
+}
+
+const handleTouchMove = (e) => {
+  if (e.touches.length === 2 && initialDist > 0) {
+    const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY)
+    const delta = dist / initialDist
+    const newScale = Math.min(Math.max(scale.value * delta, 1.0), 3.0)
+    scale.value = newScale
+    initialDist = dist
+  }
+}
+
+const adjustScale = (delta) => {
+  scale.value = Math.min(Math.max(scale.value + delta, 1.0), 3.0)
+}
+
+const resetScale = () => { scale.value = 1.0 }
 
 const setPageRef = (el, pageNum) => {
   if (el) pageRefs.value[pageNum] = el
@@ -57,6 +111,7 @@ const initPdfJs = async () => {
   
   loadingPdf.value = true
   pages.value = []
+  scale.value = 1.0
   
   try {
     const pdfjs = await import('pdfjs-dist')
@@ -75,7 +130,7 @@ const initPdfJs = async () => {
         if (!canvas) continue
         
         const context = canvas.getContext('2d')
-        // Escala 1.5 a 2.0 para garantir nitidez no mobile (retina)
+        // Escala 1.5 para boa resolução sem pesar demais na memória
         const viewport = page.getViewport({ scale: 1.5 })
         
         canvas.height = viewport.height
