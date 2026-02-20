@@ -26,7 +26,8 @@ export default defineEventHandler(async (event) => {
       language: data.language,
       thumbnail_url: data.thumbnail_url,
       category_id: categoryId,
-      status: 'published'
+      status: 'published',
+      search_metadata: `${data.authors_list || ''} ${data.tags_list || ''}`.trim()
     }).eq('id', id)
 
     if (docError) throw docError

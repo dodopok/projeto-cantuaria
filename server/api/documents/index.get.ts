@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
   let dbQuery = adminSupabase
     .from('documents')
-    .select('*, authors(*), categories(*)', { count: 'exact' })
+    .select('*, authors(*), categories(*), tags(*)', { count: 'exact' })
     .eq('status', 'published')
     .order('created_at', { ascending: false })
     .range(page * pageSize, (page + 1) * pageSize - 1)

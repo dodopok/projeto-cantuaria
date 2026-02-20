@@ -15,7 +15,7 @@ export default defineNuxtConfig({
       title: 'Projeto Cantuária | Biblioteca Digital Anglicana',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' },
         { name: 'description', content: 'Uma biblioteca pública digital dedicada à preservação e disseminação da produção litúrgica, teológica e histórica anglicana em língua portuguesa.' },
         { name: 'format-detection', content: 'telephone=no' },
         // SEO Open Graph

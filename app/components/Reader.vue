@@ -34,7 +34,7 @@
       <!-- PDF Viewer -->
       <iframe 
         v-if="url && url.endsWith('.pdf')" 
-        :src="url" 
+        :src="`${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`" 
         class="w-full max-w-5xl bg-white shadow-2xl h-full border-none"
       ></iframe>
 
