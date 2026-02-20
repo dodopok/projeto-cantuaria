@@ -16,8 +16,6 @@ export default defineEventHandler(async (event) => {
     .from('documents')
     .select('*, authors(*), categories(*), tags(*)', { count: 'exact' })
     .eq('status', 'published')
-    .order('created_at', { ascending: false })
-    .range(page * pageSize, (page + 1) * pageSize - 1)
 
   // Pesquisa de Texto (Full Text Search)
   if (search) {
@@ -25,7 +23,14 @@ export default defineEventHandler(async (event) => {
       config: 'portuguese',
       type: 'websearch'
     })
+    // Ordenar por relevância (Rank) se houver busca
+    dbQuery = dbQuery.order('search_vector', { ascending: false })
+  } else {
+    // Caso contrário, ordenar por data de criação (mais recentes primeiro)
+    dbQuery = dbQuery.order('created_at', { ascending: false })
   }
+
+  dbQuery = dbQuery.range(page * pageSize, (page + 1) * pageSize - 1)
 
   // Filtro de Múltiplos Tipos
   if (type) {
