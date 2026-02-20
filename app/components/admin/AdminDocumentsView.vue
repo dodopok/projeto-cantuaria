@@ -35,9 +35,14 @@
 
           <!-- Info -->
           <div class="p-4">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-[7px] px-1.5 py-0.5 bg-cantuaria-oxford/5 text-cantuaria-oxford/60 uppercase tracking-widest font-bold rounded-sm">{{ item.type }}</span>
-              <span class="text-[7px] text-cantuaria-charcoal/30 uppercase font-bold">{{ new Date(item.created_at).toLocaleDateString() }}</span>
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[7px] px-1.5 py-0.5 bg-cantuaria-oxford/5 text-cantuaria-oxford/60 uppercase tracking-widest font-bold rounded-sm">{{ item.type }}</span>
+                <span class="text-[7px] text-cantuaria-charcoal/30 uppercase font-bold">{{ new Date(item.created_at).toLocaleDateString() }}</span>
+              </div>
+              <div v-if="item.content_markdown" class="flex items-center" title="Possui transcrição Markdown">
+                <LucideScanText class="w-3 h-3 text-cantuaria-gold" />
+              </div>
             </div>
             <h4 class="font-medium text-cantuaria-oxford text-xs truncate mb-1" :title="item.title">{{ item.title }}</h4>
             <p v-if="item.authors_list" class="text-[9px] text-cantuaria-charcoal/40 font-serif italic truncate">{{ item.authors_list }}</p>
@@ -54,6 +59,7 @@
                 <input type="checkbox" @change="$emit('toggleAll')" :checked="allSelected" class="w-4 h-4 accent-cantuaria-oxford" />
               </th>
               <th class="px-6 py-4">Obra</th>
+              <th class="px-6 py-4">Transcrição</th>
               <th class="px-6 py-4">Data</th>
               <th class="px-6 py-4 text-right">Ações</th>
             </tr>
@@ -67,7 +73,7 @@
                 <div class="flex items-center gap-4">
                   <div class="w-10 h-10 bg-cantuaria-oxford/5 flex items-center justify-center rounded text-cantuaria-oxford overflow-hidden shrink-0 shadow-inner border border-cantuaria-charcoal/5">
                     <img v-if="item.thumbnail_url" :src="item.thumbnail_url" class="w-full h-full object-cover" />
-                    <LucideFileText v-else class="w-5 h-5" />
+                    <LucideFileTextIcon v-else class="w-5 h-5" />
                   </div>
                   <div class="min-w-0">
                     <div class="font-medium text-cantuaria-oxford truncate max-w-md">{{ item.title }}</div>
@@ -76,6 +82,15 @@
                       <span v-if="item.authors_list" class="text-[9px] text-cantuaria-charcoal/40 font-serif italic truncate max-w-xs">{{ item.authors_list }}</span>
                     </div>
                   </div>
+                </div>
+              </td>
+              <td class="px-6 py-6">
+                <div v-if="item.content_markdown" class="flex items-center gap-2 text-cantuaria-gold" title="Documento Transcrito">
+                  <LucideScanText class="w-4 h-4" />
+                  <span class="text-[8px] uppercase font-bold">Markdown</span>
+                </div>
+                <div v-else class="text-cantuaria-charcoal/20" title="Sem transcrição">
+                  <LucideMinusCircle class="w-4 h-4" />
                 </div>
               </td>
               <td class="px-6 py-6 text-sm text-cantuaria-charcoal/60">{{ new Date(item.created_at).toLocaleDateString() }}</td>

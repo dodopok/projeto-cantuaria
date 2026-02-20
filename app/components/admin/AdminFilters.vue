@@ -10,7 +10,29 @@
         class="w-full pl-10 pr-4 py-2 bg-cantuaria-cream/50 border border-cantuaria-charcoal/10 focus:outline-none focus:border-cantuaria-oxford text-xs font-sans rounded-sm transition-colors"
       />
     </div>
-    <div class="flex gap-4 items-center">
+    <div class="flex gap-4 items-center flex-wrap md:flex-nowrap">
+      <!-- Filtros de Pendências -->
+      <div class="flex items-center gap-2 mr-2 border-r border-cantuaria-charcoal/10 pr-4">
+        <label class="flex items-center gap-2 cursor-pointer group">
+          <input 
+            type="checkbox" 
+            :checked="filterNoMarkdown" 
+            @change="$emit('update:filterNoMarkdown', ($event.target as HTMLInputElement).checked)"
+            class="w-4 h-4 accent-cantuaria-gold rounded-sm" 
+          />
+          <span class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 group-hover:text-cantuaria-oxford transition-colors">Sem Markdown</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer group ml-2">
+          <input 
+            type="checkbox" 
+            :checked="filterNoCover" 
+            @change="$emit('update:filterNoCover', ($event.target as HTMLInputElement).checked)"
+            class="w-4 h-4 accent-cantuaria-gold rounded-sm" 
+          />
+          <span class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 group-hover:text-cantuaria-oxford transition-colors">Sem Capa</span>
+        </label>
+      </div>
+
       <!-- View Mode Toggle -->
       <div class="flex border border-cantuaria-charcoal/10 rounded-sm overflow-hidden mr-2">
         <button 
@@ -64,12 +86,16 @@ defineProps<{
   viewMode: 'table' | 'grid'
   orderBy: string
   pageSize: number
+  filterNoMarkdown: boolean
+  filterNoCover: boolean
 }>()
 
 defineEmits([
   'update:searchQuery', 
   'update:viewMode', 
   'update:orderBy', 
-  'update:pageSize'
+  'update:pageSize',
+  'update:filterNoMarkdown',
+  'update:filterNoCover'
 ])
 </script>

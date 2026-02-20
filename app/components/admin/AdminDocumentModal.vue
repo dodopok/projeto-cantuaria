@@ -84,11 +84,33 @@
             </div>
           </div>
           <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Resumo</label><textarea rows="6" v-model="modelValue.summary" :disabled="publishing" class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-sans text-sm leading-relaxed bg-cantuaria-cream/10 disabled:opacity-50"></textarea></div>
+          
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Conteúdo Markdown (Transcrição)</label>
+              <span v-if="modelValue.content_markdown" class="text-[8px] uppercase font-bold text-cantuaria-crimson/60">{{ modelValue.content_markdown.length }} caracteres</span>
+            </div>
+            <textarea 
+              rows="12" 
+              v-model="modelValue.content_markdown" 
+              :disabled="publishing" 
+              placeholder="Cole aqui a transcrição em Markdown ou use o OCR com Gemini..."
+              class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-mono text-xs leading-relaxed bg-cantuaria-charcoal/[0.02] disabled:opacity-50 min-h-[300px]"
+            ></textarea>
+          </div>
+
           <div class="space-y-2"><label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Tags</label><input type="text" v-model="modelValue.tags_list" :disabled="publishing" class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-oxford text-sm bg-transparent disabled:opacity-50" /></div>
+          
           <div class="pt-10 flex justify-end gap-4 border-t border-cantuaria-oxford/5">
             <button @click="$emit('update:modelValue', null)" :disabled="publishing" class="px-8 py-3 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors disabled:opacity-50">Cancelar</button>
-            <button @click="$emit('publish')" :disabled="publishing" class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all">
-              <template v-if="publishing"><LucideLoader2 class="w-4 h-4 animate-spin inline mr-2" /> Salvando...</template>
+            <button 
+              @click="$emit('publish')" 
+              :disabled="publishing || analyzing || performingOCR" 
+              class="px-12 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl disabled:opacity-50 transition-all flex items-center gap-3"
+            >
+              <LucideLoader2 v-if="publishing || analyzing || performingOCR" class="w-4 h-4 animate-spin" />
+              <template v-if="publishing">Salvando...</template>
+              <template v-else-if="analyzing || performingOCR">IA em Processamento...</template>
               <template v-else>Salvar & Publicar</template>
             </button>
           </div>

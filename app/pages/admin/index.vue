@@ -23,6 +23,8 @@
             v-model:view-mode="viewMode"
             v-model:order-by="orderBy"
             v-model:page-size="pageSize"
+            v-model:filter-no-markdown="filterNoMarkdown"
+            v-model:filter-no-cover="filterNoCover"
           />
         </div>
 
@@ -153,6 +155,8 @@ const currentPage = ref(0)
 const pageSize = ref(10)
 const totalItems = ref(0)
 const orderBy = ref('created_at:desc')
+const filterNoMarkdown = ref(false)
+const filterNoCover = ref(false)
 
 const showCropModal = ref(false)
 const croppingImage = ref('')
@@ -226,6 +230,10 @@ const fetchData = async () => {
   }
   let query = supabase.from('documents').select('*, authors(name), categories(name), tags(name)', { count: 'exact' }).eq('status', currentTab.value)
   if (searchQuery.value) query = query.textSearch('search_vector', searchQuery.value, { config: 'portuguese', type: 'websearch' })
+  
+  if (filterNoMarkdown.value) query = query.is('content_markdown', null)
+  if (filterNoCover.value) query = query.is('thumbnail_url', null)
+
   const [column, direction] = orderBy.value.split(':')
   query = query.order(column, { ascending: direction === 'asc' })
   const from = currentPage.value * pageSize.value
@@ -248,7 +256,7 @@ const fetchData = async () => {
 }
 
 watchDebounced(searchQuery, () => { currentPage.value = 0; fetchData() }, { debounce: 500 })
-watch([currentPage, pageSize, orderBy, currentTab], () => { fetchData() })
+watch([currentPage, pageSize, orderBy, currentTab, filterNoMarkdown, filterNoCover], () => { fetchData() })
 
 const toggleAll = () => { selectedIds.value = allSelected.value ? [] : items.value.map(i => i.id) }
 const openReview = (item: any) => { editingItem.value = JSON.parse(JSON.stringify(item)) }
