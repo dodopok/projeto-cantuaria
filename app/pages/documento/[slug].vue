@@ -103,6 +103,14 @@
                 <span class="font-sans text-xs font-bold text-cantuaria-oxford uppercase tracking-widest">{{ document.type }}</span>
               </div>
             </div>
+
+            <!-- Botão de Remoção Discreto -->
+            <div class="pt-12 mt-12 border-t border-cantuaria-oxford/5">
+              <button @click="showRemovalModal = true" class="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 hover:text-cantuaria-crimson transition-colors">
+                <LucideAlertCircle class="w-3 h-3" />
+                <span>Solicitar remoção desta obra</span>
+              </button>
+            </div>
           </div>
 
           <!-- Document Info & Metadata -->
@@ -148,6 +156,48 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Removal Request Modal -->
+    <Teleport to="body">
+      <div v-if="showRemovalModal" class="fixed inset-0 z-[9999] bg-cantuaria-oxford/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md p-8 md:p-10 shadow-2xl relative animate-fade-in">
+          <button @click="showRemovalModal = false" class="absolute top-4 right-4 p-2 text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">
+            <LucideX class="w-5 h-5" />
+          </button>
+          
+          <h3 class="font-serif text-2xl text-cantuaria-oxford mb-2">Solicitar Remoção</h3>
+          <p class="text-xs text-cantuaria-charcoal/60 mb-8 leading-relaxed">
+            Se você é o detentor dos direitos desta obra ou encontrou conteúdo inadequado, por favor informe os dados abaixo para nossa análise.
+          </p>
+
+          <form @submit.prevent="submitRemovalRequest" class="space-y-6">
+            <div class="space-y-1">
+              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Seu Nome</label>
+              <input v-model="removalForm.name" type="text" required class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-gold text-sm bg-transparent" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">E-mail de Contato</label>
+              <input v-model="removalForm.email" type="email" required class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-gold text-sm bg-transparent" />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Motivo da Solicitação</label>
+              <textarea v-model="removalForm.reason" required rows="4" class="w-full border border-cantuaria-charcoal/10 p-3 focus:outline-none focus:border-cantuaria-gold text-sm leading-relaxed bg-cantuaria-cream/10 resize-none"></textarea>
+            </div>
+
+            <div class="pt-4">
+              <button 
+                type="submit" 
+                :disabled="submittingRemoval"
+                class="w-full py-4 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 transition-all disabled:opacity-50"
+              >
+                <LucideLoader2 v-if="submittingRemoval" class="w-4 h-4 animate-spin mx-auto" />
+                <span v-else>Enviar Solicitação</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </NuxtLayout>
 </template>
 
@@ -158,7 +208,8 @@ import {
   BookOpen as LucideBookOpen,
   Loader2 as LucideLoader2,
   BookX as LucideBookX,
-  X as LucideX
+  X as LucideX,
+  AlertCircle as LucideAlertCircle
 } from 'lucide-vue-next'
 import { useScrollLock } from '@vueuse/core'
 
@@ -168,10 +219,19 @@ const document = ref<any>(null)
 const loading = ref(true)
 const downloading = ref(false)
 
-// Bloqueia o scroll do body quando o reader está aberto
+// Remoção
+const showRemovalModal = ref(false)
+const submittingRemoval = ref(false)
+const removalForm = ref({
+  name: '',
+  email: '',
+  reason: ''
+})
+
+// Bloqueia o scroll do body quando o reader ou modal está aberto
 const isLocked = useScrollLock(process.client ? window.document.body : null)
-watch(showReader, (val) => {
-  isLocked.value = val
+watch([showReader, showRemovalModal], ([r, m]) => {
+  isLocked.value = r || m
 })
 
 const fetchDocument = async () => {
@@ -191,6 +251,26 @@ const fetchDocument = async () => {
       twitterImage: data.thumbnail_url
     })
   } catch (err) { console.error('Erro:', err) } finally { loading.value = false }
+}
+
+const submitRemovalRequest = async () => {
+  submittingRemoval.value = true
+  try {
+    await $fetch('/api/documents/request-removal', {
+      method: 'POST',
+      body: {
+        documentId: document.value.id,
+        ...removalForm.value
+      }
+    })
+    alert('Solicitação enviada com sucesso. Nossa equipe analisará o pedido.')
+    showRemovalModal.value = false
+    removalForm.value = { name: '', email: '', reason: '' }
+  } catch (err) {
+    alert('Erro ao enviar solicitação. Por favor, tente novamente mais tarde.')
+  } finally {
+    submittingRemoval.value = false
+  }
 }
 
 const download = async () => {

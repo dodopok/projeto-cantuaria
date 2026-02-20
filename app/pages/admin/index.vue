@@ -37,6 +37,13 @@
               >
                 Publicados
               </button>
+              <button 
+                @click="currentTab = 'removal'; currentPage = 0"
+                :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
+                currentTab === 'removal' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
+              >
+                Solicitações ({{ removalRequests.length }})
+              </button>
             </div>
 
             <div v-if="selectedIds.length > 0 && currentTab === 'pending'" class="pb-4 animate-fade-in">
@@ -50,8 +57,8 @@
             </div>
           </div>
 
-          <!-- Filters Bar -->
-          <div class="flex flex-col md:flex-row gap-4 bg-white p-4 border border-cantuaria-charcoal/5 shadow-sm rounded-sm">
+          <!-- Filters Bar (Only for documents tabs) -->
+          <div v-if="currentTab !== 'removal'" class="flex flex-col md:flex-row gap-4 bg-white p-4 border border-cantuaria-charcoal/5 shadow-sm rounded-sm">
             <div class="relative flex-grow">
               <LucideSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cantuaria-charcoal/30" />
               <input 
@@ -79,6 +86,40 @@
 
         <div v-if="loading" class="py-20 text-center">
           <LucideLoader2 class="w-10 h-10 animate-spin mx-auto text-cantuaria-oxford/20" />
+        </div>
+
+        <!-- Removal Requests View -->
+        <div v-else-if="currentTab === 'removal'" class="space-y-6">
+          <div v-if="removalRequests.length === 0" class="bg-white border border-cantuaria-charcoal/5 p-20 text-center shadow-sm">
+            <LucideShieldCheck class="w-12 h-12 mx-auto mb-4 text-cantuaria-gold/30" />
+            <p class="font-serif text-xl text-cantuaria-oxford/50">Nenhuma solicitação de remoção pendente.</p>
+          </div>
+          <div v-else class="grid grid-cols-1 gap-6">
+            <div v-for="req in removalRequests" :key="req.id" class="bg-white border border-cantuaria-charcoal/5 p-8 shadow-sm flex flex-col md:flex-row justify-between gap-8 group hover:border-cantuaria-gold/30 transition-all">
+              <div class="space-y-4 max-w-2xl">
+                <div class="flex items-center gap-3">
+                  <span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-crimson bg-cantuaria-crimson/5 px-2 py-1">Solicitação de Remoção</span>
+                  <span class="text-[10px] text-cantuaria-charcoal/40 uppercase tracking-widest font-bold">{{ new Date(req.created_at).toLocaleDateString() }}</span>
+                </div>
+                <h3 class="font-serif text-2xl text-cantuaria-oxford">{{ req.documents?.title }}</h3>
+                <div class="grid grid-cols-2 gap-6 text-xs">
+                  <div>
+                    <span class="block text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 mb-1">Solicitante</span>
+                    <span class="font-bold text-cantuaria-charcoal">{{ req.requester_name }}</span>
+                    <span class="block text-cantuaria-charcoal/60">{{ req.requester_email }}</span>
+                  </div>
+                  <div>
+                    <span class="block text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 mb-1">Motivo</span>
+                    <p class="text-cantuaria-charcoal/80 leading-relaxed italic">"{{ req.reason }}"</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 shrink-0">
+                <button @click="handleRemoval(req.id, 'deny')" class="px-6 py-3 border border-cantuaria-charcoal/10 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal hover:bg-cantuaria-charcoal/5 transition-all">Ignorar</button>
+                <button @click="handleRemoval(req.id, 'approve')" class="px-6 py-3 bg-cantuaria-crimson text-white text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-crimson/90 shadow-lg transition-all">Excluir Obra</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div v-else-if="items.length === 0" class="bg-white border border-cantuaria-charcoal/5 p-20 text-center shadow-sm">
@@ -360,7 +401,7 @@ definePageMeta({ middleware: 'admin' })
 
 const supabase = useSupabaseClient()
 const loading = ref(true)
-const currentTab = ref<'pending' | 'published'>('pending')
+const currentTab = ref<'pending' | 'published' | 'removal'>('pending')
 const items = ref<any[]>([])
 const pendingCount = ref(0)
 const editingItem = ref<any>(null)
@@ -369,6 +410,9 @@ const publishing = ref(false)
 const uploadingCover = ref(false)
 const capturingPdf = ref(false)
 const performingOCR = ref(false)
+
+// Remoção
+const removalRequests = ref<any[]>([])
 
 // Pagination & Search
 const searchQuery = ref('')
@@ -411,10 +455,40 @@ const updateSlugSuggestion = () => {
   }
 }
 
+const fetchRemovalRequests = async () => {
+  try {
+    const data: any = await $fetch('/api/admin/removal-requests')
+    removalRequests.value = data
+  } catch (err) {
+    console.error('Erro ao buscar solicitações:', err)
+  }
+}
+
+const handleRemoval = async (requestId: string, action: 'approve' | 'deny') => {
+  if (action === 'approve' && !confirm('Tem certeza que deseja EXCLUIR permanentemente esta obra?')) return
+  
+  try {
+    await $fetch('/api/admin/handle-removal', {
+      method: 'POST',
+      body: { requestId, action }
+    })
+    await fetchRemovalRequests()
+    await fetchData()
+  } catch (err) {
+    alert('Erro ao processar solicitação.')
+  }
+}
+
 const fetchData = async () => {
   loading.value = true
   selectedIds.value = []
   
+  if (currentTab.value === 'removal') {
+    await fetchRemovalRequests()
+    loading.value = false
+    return
+  }
+
   let query = supabase
     .from('documents')
     .select('*, authors(name), categories(name), tags(name)', { count: 'exact' })
@@ -455,6 +529,9 @@ const fetchData = async () => {
     .select('*', { count: 'exact', head: true })
     .eq('status', 'pending')
   pendingCount.value = pCount || 0
+  
+  // Atualiza também contagem de remoção em background
+  fetchRemovalRequests()
   
   loading.value = false
 }
