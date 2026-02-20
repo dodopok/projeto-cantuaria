@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
   let dbQuery = adminSupabase
     .from('documents')
-    .select('*, authors(*), categories(*), tags(*)', { count: 'exact' })
+    .select('*, authors(*), categories!inner(*), tags(*)', { count: 'exact' })
     .eq('status', 'published')
 
   // Pesquisa de Texto (Full Text Search)
@@ -23,16 +23,18 @@ export default defineEventHandler(async (event) => {
       config: 'portuguese',
       type: 'websearch'
     })
-    // Ordenar por relevância (Rank) se houver busca
     dbQuery = dbQuery.order('search_vector', { ascending: false })
   } else {
-    // Caso contrário, ordenar por data de criação (mais recentes primeiro)
     dbQuery = dbQuery.order('created_at', { ascending: false })
   }
 
-  dbQuery = dbQuery.range(page * pageSize, (page + 1) * pageSize - 1)
+  // Filtro de Categoria (via Slug na tabela relacionada)
+  // O !inner garante que o Supabase filtre a tabela principal baseada na existência/match da relacionada
+  if (category) {
+    dbQuery = dbQuery.eq('categories.slug', category)
+  }
 
-  // Filtro de Múltiplos Tipos (Normalizado para bater com o Banco)
+  // Filtro de Múltiplos Tipos
   if (type) {
     const types = type.split(',').map(t => {
       const clean = t.trim().toLowerCase()
@@ -59,18 +61,13 @@ export default defineEventHandler(async (event) => {
     dbQuery = dbQuery.gte('publication_year', startYear).lte('publication_year', endYear)
   }
 
+  // Paginação aplicada ao final
+  dbQuery = dbQuery.range(page * pageSize, (page + 1) * pageSize - 1)
+
   const { data, count, error } = await dbQuery
 
-  // Filtro de Categoria (necessita ser feito via join ou sub-query se for múltiplo)
-  let filteredData = data
-  if (category && data) {
-    const categoriesSlugs = category.split(',')
-    filteredData = data.filter(doc => 
-      doc.categories && categoriesSlugs.includes(doc.categories.slug)
-    )
-  }
-
   if (error) {
+    console.error('[API GET Error]:', error)
     throw createError({
       statusCode: 500,
       statusMessage: 'Erro ao buscar documentos no servidor'
@@ -78,7 +75,7 @@ export default defineEventHandler(async (event) => {
   }
 
   return {
-    documents: filteredData || [],
+    documents: data || [],
     total: count,
     page,
     pageSize,
