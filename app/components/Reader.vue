@@ -1,13 +1,16 @@
 <template>
   <div class="w-full h-full bg-cantuaria-charcoal flex flex-col">
     <!-- Visualizador Nativo do Browser -->
-    <div class="flex-grow relative overflow-auto bg-white touch-auto" style="-webkit-overflow-scrolling: touch;">
-      <iframe 
+    <div class="flex-grow relative bg-white overflow-y-auto overflow-x-hidden touch-auto" style="-webkit-overflow-scrolling: touch;">
+      <object
         v-if="url && url.endsWith('.pdf')" 
-        :src="`${url}#view=FitH`" 
-        class="w-full h-full min-h-[calc(100vh-120px)] border-none block"
-        title="Visualizador de PDF"
-      ></iframe>
+        :data="url"
+        type="application/pdf"
+        class="w-full h-full min-h-[calc(100vh-120px)] block"
+      >
+        <!-- Fallback caso o browser não consiga renderizar o object -->
+        <iframe :src="url" class="w-full h-full border-none"></iframe>
+      </object>
 
       <!-- Fallback / Texto Reader -->
       <div v-else class="flex justify-center p-4 lg:p-12 h-full overflow-auto">
@@ -22,7 +25,7 @@
       </div>
     </div>
 
-    <!-- Barra de Ajuda Mobile (Apenas iOS/Android onde iframes de PDF são instáveis) -->
+    <!-- Barra de Ajuda Mobile (Fallbacks para iOS onde o embed é limitado) -->
     <div v-if="url && url.endsWith('.pdf')" class="md:hidden p-4 bg-cantuaria-oxford border-t border-white/10 flex justify-center shrink-0">
       <a 
         :href="url" 
@@ -30,7 +33,7 @@
         class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-gold flex items-center gap-2"
       >
         <LucideExternalLink class="w-3.5 h-3.5" />
-        Abrir em tela cheia (Melhor p/ Mobile)
+        Abrir em tela cheia (Melhor p/ iPhone)
       </a>
     </div>
   </div>
@@ -46,9 +49,9 @@ defineProps({
 </script>
 
 <style scoped>
-/* No iOS, o iframe de PDF às vezes precisa de ajuda para entender o toque */
-iframe {
-  display: block;
-  -webkit-overflow-scrolling: touch;
+/* Estilos específicos para garantir que o object/iframe respeite o container */
+object, iframe {
+  width: 100%;
+  height: 100%;
 }
 </style>
