@@ -135,7 +135,7 @@
     <!-- Reader Overlay -->
     <Teleport to="body">
       <div v-if="showReader" class="fixed inset-0 z-[100] bg-white flex flex-col">
-        <header class="h-16 border-b border-cantuaria-charcoal/5 flex items-center justify-between px-4 md:px-6 bg-cantuaria-cream/50 backdrop-blur-sm">
+        <header class="h-16 border-b border-cantuaria-charcoal/5 flex items-center justify-between px-4 md:px-6 bg-cantuaria-cream/50 backdrop-blur-sm shrink-0">
           <div class="flex items-center gap-4 truncate">
             <span class="font-serif text-base md:text-lg text-cantuaria-oxford truncate max-w-[200px] md:max-w-md">{{ document?.title }}</span>
           </div>
@@ -143,7 +143,7 @@
             <LucideX class="w-6 h-6 text-cantuaria-oxford" />
           </button>
         </header>
-        <div class="flex-grow bg-cantuaria-charcoal/95 overflow-hidden">
+        <div class="flex-grow bg-cantuaria-charcoal/95">
           <Reader :url="document?.file_url" :type="document?.type" />
         </div>
       </div>
@@ -160,12 +160,19 @@ import {
   BookX as LucideBookX,
   X as LucideX
 } from 'lucide-vue-next'
+import { useScrollLock } from '@vueuse/core'
 
 const route = useRoute()
 const showReader = ref(false)
 const document = ref<any>(null)
 const loading = ref(true)
 const downloading = ref(false)
+
+// Bloqueia o scroll do body quando o reader está aberto
+const isLocked = useScrollLock(process.client ? window.document.body : null)
+watch(showReader, (val) => {
+  isLocked.value = val
+})
 
 const fetchDocument = async () => {
   loading.value = true
