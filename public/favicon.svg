@@ -1,0 +1,16 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo Oxford Blue com cantos levemente arredondados, igual ao header -->
+  <rect width="100" height="100" rx="12" fill="#002147"/>
+  
+  <!-- Letra C em fonte Serif (EB Garamond / Serif padrão do sistema) -->
+  <text 
+    x="50%" 
+    y="55%" 
+    dominant-baseline="middle" 
+    text-anchor="middle" 
+    font-family="EB Garamond, serif" 
+    font-size="65" 
+    fill="white" 
+    font-weight="normal"
+  >C</text>
+</svg>
