@@ -30,7 +30,11 @@ const { data: document, pending } = await useAsyncData(`document-pdf-${route.par
 
 useSeoMeta({
   title: computed(() => document.value ? `PDF: ${document.value.title} | Projeto Cantuária` : 'PDF | Projeto Cantuária'),
+  ogTitle: computed(() => document.value ? `PDF: ${document.value.title} | Projeto Cantuária` : 'PDF | Projeto Cantuária'),
   description: computed(() => `Visualização do documento original: ${document.value?.title}`),
+  ogDescription: computed(() => `Visualização do documento original: ${document.value?.title}`),
+  ogImage: computed(() => document.value?.thumbnail_url),
+  twitterCard: 'summary_large_image',
   ogType: 'website'
 })
 

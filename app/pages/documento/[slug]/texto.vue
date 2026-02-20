@@ -104,7 +104,11 @@ const renderedMarkdown = computed(() => {
 
 useSeoMeta({
   title: computed(() => document.value ? `Texto: ${document.value.title} | Projeto Cantuária` : 'Texto | Projeto Cantuária'),
+  ogTitle: computed(() => document.value ? `Texto: ${document.value.title} | Projeto Cantuária` : 'Texto | Projeto Cantuária'),
   description: computed(() => document.value?.summary || 'Leitura integral em texto do acervo digital.'),
+  ogDescription: computed(() => document.value?.summary || 'Leitura integral em texto do acervo digital.'),
+  ogImage: computed(() => document.value?.thumbnail_url),
+  twitterCard: 'summary_large_image',
   ogType: 'article'
 })
 
