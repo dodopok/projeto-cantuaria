@@ -56,7 +56,9 @@
           </div>
 
           <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            <DocumentCard v-for="doc in documents" :key="doc.id" :document="doc" />
+            <NuxtLink v-for="doc in documents" :key="doc.id" :to="`/documento/${doc.slug}`">
+              <DocumentCard :document="doc" />
+            </NuxtLink>
           </div>
         </div>
       </section>
