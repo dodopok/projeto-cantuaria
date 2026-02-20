@@ -266,8 +266,19 @@ const capturePdfCover = async () => {
   capturingPdf.value = true
   try {
     const pdfjs = await import('pdfjs-dist')
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
-    const loadingTask = pdfjs.getDocument({ url: editingItem.value.file_url, disableFontFace: true })
+    const version = '5.4.624'
+    const cdnBase = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${version}`
+    
+    pdfjs.GlobalWorkerOptions.workerSrc = `${cdnBase}/build/pdf.worker.min.mjs`
+    
+    const loadingTask = pdfjs.getDocument({ 
+      url: editingItem.value.file_url, 
+      disableFontFace: true,
+      cMapUrl: `${cdnBase}/cmaps/`,
+      cMapPacked: true,
+      standardFontDataUrl: `${cdnBase}/standard_fonts/`,
+      wasmUrl: `${cdnBase}/wasm/`
+    })
     const pdf = await loadingTask.promise
     const page = await pdf.getPage(1)
     const viewport = page.getViewport({ scale: 2.0 })
