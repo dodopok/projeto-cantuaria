@@ -46,18 +46,28 @@
               </button>
             </div>
 
-            <div v-if="selectedIds.length > 0 && currentTab === 'pending'" class="pb-4 animate-fade-in">
+            <div v-if="selectedIds.length > 0 && currentTab !== 'removal'" class="pb-4 flex gap-3 animate-fade-in">
               <button 
+                v-if="currentTab === 'pending'"
                 @click="startBatchAnalysis"
                 class="flex items-center gap-2 px-6 py-2 bg-cantuaria-gold text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all"
               >
                 <LucideSparkles class="w-4 h-4" />
-                Analisar {{ selectedIds.length }} selecionados com IA
+                Analisar com IA
+              </button>
+              <button 
+                @click="deleteSelected"
+                :disabled="deletingBulk"
+                class="flex items-center gap-2 px-6 py-2 bg-cantuaria-crimson text-white text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                <LucideLoader2 v-if="deletingBulk" class="w-4 h-4 animate-spin" />
+                <LucideTrash2 v-else class="w-4 h-4" />
+                Excluir {{ selectedIds.length }} selecionados
               </button>
             </div>
           </div>
 
-          <!-- Filters Bar (Only for documents tabs) -->
+          <!-- Filters Bar -->
           <div v-if="currentTab !== 'removal'" class="flex flex-col md:flex-row gap-4 bg-white p-4 border border-cantuaria-charcoal/5 shadow-sm rounded-sm">
             <div class="relative flex-grow">
               <LucideSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cantuaria-charcoal/30" />
@@ -132,7 +142,7 @@
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="bg-cantuaria-cream/50 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 border-b border-cantuaria-charcoal/5">
-                  <th v-if="currentTab === 'pending'" class="px-6 py-4 w-10">
+                  <th class="px-6 py-4 w-10">
                     <input type="checkbox" @change="toggleAll" :checked="allSelected" class="w-4 h-4 accent-cantuaria-oxford" />
                   </th>
                   <th class="px-6 py-4">Obra</th>
@@ -142,7 +152,7 @@
               </thead>
               <tbody class="divide-y divide-cantuaria-charcoal/5">
                 <tr v-for="item in items" :key="item.id" class="group hover:bg-cantuaria-cream/30 transition-colors">
-                  <td v-if="currentTab === 'pending'" class="px-6 py-6">
+                  <td class="px-6 py-6">
                     <input type="checkbox" v-model="selectedIds" :value="item.id" class="w-4 h-4 accent-cantuaria-oxford" />
                   </td>
                   <td class="px-6 py-6">
@@ -410,6 +420,7 @@ const publishing = ref(false)
 const uploadingCover = ref(false)
 const capturingPdf = ref(false)
 const performingOCR = ref(false)
+const deletingBulk = ref(false)
 
 // Remoção
 const removalRequests = ref<any[]>([])
@@ -653,6 +664,23 @@ const saveBatchResults = async () => {
 }
 
 const closeBatch = () => { batchAnalysisActive.value = false; batchResults.value = []; selectedIds.value = [] }
+
+const deleteSelected = async () => {
+  if (!confirm(`Tem certeza que deseja excluir permanentemente ${selectedIds.value.length} itens e seus arquivos?`)) return
+  deletingBulk.value = true
+  try {
+    await $fetch('/api/documents/batch-delete', {
+      method: 'POST',
+      body: { ids: selectedIds.value }
+    })
+    selectedIds.value = []
+    await fetchData()
+  } catch (err) {
+    alert('Erro ao excluir itens em lote.')
+  } finally {
+    deletingBulk.value = false
+  }
+}
 
 const publish = async () => { 
   publishing.value = true
