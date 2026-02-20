@@ -67,33 +67,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 5. Invalidação de Cache (Nitro/SWR)
-    try {
-      const storage = useStorage('cache')
-      const keys = await storage.getKeys()
-      
-      // Filtro mais robusto para as rotas do Projeto Cantuária
-      const keysToPurge = keys.filter(key => {
-        const k = key.toLowerCase()
-        return k.includes('index') || 
-               k.includes('biblioteca') || 
-               k.includes('api:documents') || 
-               k.includes('api:authors') || 
-               k.includes('api:categories') ||
-               k.includes('_payload') // Payload de dados do Nuxt 3
-      })
-
-      for (const key of keysToPurge) {
-        await storage.removeItem(key)
-      }
-      
-      // Log informativo (visível no terminal do servidor)
-      console.log(`[Cache Purge] Total de chaves no storage: ${keys.length}`)
-      console.log(`[Cache Purge] Invalidadas ${keysToPurge.length} chaves:`, keysToPurge)
-      
-    } catch (cacheErr) {
-      console.error('[Cache] Erro ao limpar cache:', cacheErr)
-    }
+    // 5. Invalidação de Cache Centralizada
+    await purgeCache()
 
     return { success: true }
   } catch (error: any) {

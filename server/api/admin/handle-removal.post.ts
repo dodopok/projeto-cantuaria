@@ -47,5 +47,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // 2. Invalidação de Cache
+  await purgeCache()
+
   return { success: true }
 })

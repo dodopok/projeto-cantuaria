@@ -238,7 +238,7 @@ const fetchData = async () => {
   }
   
   // Seleção otimizada para listagem (usando a coluna virtual has_markdown)
-  const optimizedSelect = 'id, title, slug, type, thumbnail_url, publication_year, language, created_at, status, has_markdown, authors(name), categories(name), tags(name)'
+  const optimizedSelect = 'id, title, slug, type, thumbnail_url, file_url, publication_year, language, created_at, status, has_markdown, authors(name), categories(name), tags(name)'
   
   let query = supabase.from('documents').select(optimizedSelect, { count: 'exact' }).eq('status', currentTab.value)
   if (searchQuery.value) query = query.textSearch('search_vector', searchQuery.value, { config: 'portuguese', type: 'websearch' })

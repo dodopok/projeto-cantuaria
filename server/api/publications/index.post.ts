@@ -16,5 +16,8 @@ export default defineEventHandler(async (event) => {
 
   if (error) throw createError({ statusCode: 500, statusMessage: error.message })
 
+  // Limpar cache para refletir a nova publicação
+  await purgeCache()
+
   return data
 })

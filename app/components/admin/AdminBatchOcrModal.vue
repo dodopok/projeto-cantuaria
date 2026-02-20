@@ -3,8 +3,8 @@
     <div class="bg-white w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden relative animate-fade-in">
       <header class="p-8 border-b border-cantuaria-charcoal/5 flex justify-between items-center bg-white">
         <div>
-          <h3 class="font-serif text-3xl text-cantuaria-oxford">OCR em Massa</h3>
-          <p class="text-xs text-cantuaria-charcoal/40 uppercase tracking-widest font-bold mt-1">Geração de markdown via Gemini 2.0 Flash</p>
+          <h3 class="font-serif text-3xl text-cantuaria-oxford">Markdown em Massa</h3>
+          <p class="text-xs text-cantuaria-charcoal/40 uppercase tracking-widest font-bold mt-1">Geração de transcrição via Gemini 2.0 Flash</p>
         </div>
         <button v-if="!isRunning" @click="$emit('close')" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-6 h-6" /></button>
       </header>
@@ -19,8 +19,8 @@
           </div>
           <div class="flex-grow min-w-0">
             <p class="text-sm font-medium text-cantuaria-oxford truncate">{{ res.originalTitle }}</p>
-            <p v-if="res.status === 'processing'" class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold animate-pulse mt-0.5">Processando com Gemini...</p>
-            <p v-else-if="res.status === 'complete'" class="text-[9px] uppercase tracking-widest font-bold text-green-600 mt-0.5">Markdown gerado ({{ res.chars }} chars)</p>
+            <p v-if="res.status === 'processing'" class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold animate-pulse mt-0.5">Transcrição com Gemini...</p>
+            <p v-else-if="res.status === 'complete'" class="text-[9px] uppercase tracking-widest font-bold text-green-600 mt-0.5">Markdown atualizado ({{ res.chars }} chars)</p>
             <p v-else-if="res.status === 'error'" class="text-[9px] text-cantuaria-crimson mt-0.5">{{ res.errorMessage }}</p>
             <p v-else class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 mt-0.5">Aguardando...</p>
           </div>

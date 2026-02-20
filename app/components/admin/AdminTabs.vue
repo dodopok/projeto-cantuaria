@@ -26,7 +26,7 @@
         class="flex items-center gap-2 px-6 py-2 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all"
       >
         <LucideScanText class="w-4 h-4" />
-        OCR em Massa
+        Atualizar Markdown
       </button>
       <button
         @click="$emit('deleteSelected')"

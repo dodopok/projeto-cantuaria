@@ -18,5 +18,8 @@ export default defineEventHandler(async (event) => {
 
   if (error) throw createError({ statusCode: 500, statusMessage: error.message })
 
+  // Limpar cache para refletir as alterações
+  await purgeCache()
+
   return data
 })

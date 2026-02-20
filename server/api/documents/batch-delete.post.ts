@@ -39,5 +39,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Erro ao deletar registros' })
   }
 
+  // 3. Invalidação de Cache
+  await purgeCache()
+
   return { success: true, deletedCount: ids.length }
 })

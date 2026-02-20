@@ -93,6 +93,9 @@ Gere apenas o Markdown resultante, sem explicações, comentários ou delimitado
 
     console.log(`[OCR] Salvo com sucesso para documento ${documentId}`)
 
+    // Invalidação de Cache
+    await purgeCache()
+
     // Texto puro extraído do markdown para uso opcional em análise de metadados
     const extractedText = markdown
       .replace(/^#{1,6}\s+/gm, '')
