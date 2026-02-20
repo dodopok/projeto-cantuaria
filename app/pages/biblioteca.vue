@@ -1,103 +1,133 @@
 <template>
   <NuxtLayout>
-    <section class="py-6 border-b border-cantuaria-oxford/5">
-      <div class="container mx-auto px-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div>
-            <h1 class="text-3xl md:text-5xl text-cantuaria-oxford mb-4">Biblioteca Digital</h1>
-            <p class="text-cantuaria-charcoal/60 max-w-xl text-sm md:text-base">
-              Navegue por séculos de sabedoria e liturgia. Explore o acervo oficial da tradição anglicana.
-            </p>
-          </div>
-        </div>
+    <!-- Header Refinado -->
+    <section class="py-6 bg-cantuaria-oxford text-white relative overflow-hidden">
+      <div class="absolute inset-0 opacity-[0.03] grayscale pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
+      <div class="container mx-auto px-6 relative z-10 text-center">
+        <span class="text-[10px] uppercase tracking-[0.5em] font-bold text-cantuaria-gold/60 mb-6 block">Acervo Litúrgico</span>
+        <h1 class="text-4xl md:text-7xl font-serif mb-6 leading-tight">Biblioteca Digital</h1>
+        <p class="text-white/50 max-w-2xl mx-auto font-serif italic text-base md:text-xl">
+          Navegue por séculos de sabedoria e liturgia. Explore o acervo oficial da tradição anglicana em uma experiência digital imersiva.
+        </p>
       </div>
     </section>
 
-    <!-- Filters & Main Content -->
-    <section class="py-8 md:py-12 bg-cantuaria-cream/50 min-h-screen">
-      <div class="container mx-auto px-6 flex flex-col md:flex-row gap-8 lg:gap-12">
+    <!-- Filtros & Conteúdo Principal -->
+    <section class="py-8 bg-cantuaria-cream/50 min-h-screen relative">
+      <!-- Linha de progresso de carregamento -->
+      <div v-if="loading && documents.length > 0" class="absolute top-0 left-0 w-full h-0.5 bg-cantuaria-gold/10 overflow-hidden z-20">
+        <div class="h-full bg-cantuaria-gold w-1/3 animate-[loading_1s_infinite_ease-in-out]"></div>
+      </div>
+
+      <div class="container mx-auto px-6 flex flex-col lg:flex-row gap-12 lg:gap-16">
         
-        <!-- Sidebar Filters -->
-        <aside class="w-full md:w-64 space-y-8 shrink-0">
-          <!-- Search Block - Always visible -->
-          <div class="bg-white p-6 border border-cantuaria-charcoal/5 shadow-sm">
-            <div class="relative">
-              <input 
-                v-model="searchQuery"
-                type="text" 
-                placeholder="Título, autor..." 
-                class="w-full pl-10 pr-4 py-2 bg-cantuaria-cream/30 border border-cantuaria-charcoal/10 text-xs focus:outline-none focus:border-cantuaria-oxford"
-              />
-              <LucideSearch class="w-4 h-4 absolute left-3 top-2.5 text-cantuaria-charcoal/30" />
+        <!-- Sidebar de Filtros -->
+        <aside class="w-full lg:w-80 shrink-0">
+          <div class="lg:sticky lg:top-8 bg-white border border-cantuaria-oxford/5 shadow-[0_10px_30px_-15px_rgba(0,33,71,0.05)] p-8 relative overflow-hidden">
+            <!-- Detalhe decorativo superior em ouro -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cantuaria-gold/0 via-cantuaria-gold/40 to-cantuaria-gold/0"></div>
+            
+            <!-- Bloco de Busca -->
+            <div class="space-y-6">
+              <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-4">Pesquisa Direta</h4>
+              <div class="relative group">
+                <input 
+                  v-model="searchQuery"
+                  type="text" 
+                  placeholder="Título, autor, tema..." 
+                  class="w-full pl-0 pr-4 py-3 bg-transparent border-b border-cantuaria-oxford/10 text-sm focus:outline-none focus:border-cantuaria-gold transition-all placeholder:text-cantuaria-charcoal/20"
+                />
+                <LucideSearch class="w-4 h-4 absolute right-0 top-3 text-cantuaria-oxford/20 group-focus-within:text-cantuaria-gold transition-colors" />
+              </div>
             </div>
             
-            <!-- Mobile Toggle for Additional Filters -->
-            <button @click="showMobileFilters = !showMobileFilters" class="md:hidden w-full mt-6 py-2 bg-cantuaria-cream/50 border border-cantuaria-oxford/10 text-cantuaria-oxford text-[9px] uppercase font-bold tracking-widest flex items-center justify-center gap-2">
-              <LucideFilter class="w-3 h-3" />
-              {{ showMobileFilters ? 'Ocultar Filtros' : 'Mais Filtros' }}
+            <!-- Filtros Mobile Toggle -->
+            <button @click="showMobileFilters = !showMobileFilters" class="lg:hidden w-full mt-8 py-4 bg-cantuaria-cream/50 border border-cantuaria-oxford/10 text-cantuaria-oxford text-[10px] uppercase font-bold tracking-[0.2em] flex items-center justify-center gap-3">
+              <LucideFilter class="w-4 h-4" />
+              {{ showMobileFilters ? 'Ocultar Refinamentos' : 'Refinar Busca' }}
             </button>
 
-            <div :class="['mt-8 space-y-6 md:block', showMobileFilters ? 'block' : 'hidden']">
-              <div>
-                <h4 class="text-[9px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40 mb-3">Tipo de Obra</h4>
-                <div class="grid grid-cols-2 md:grid-cols-1 gap-2">
-                  <label v-for="type in ['Livro', 'Artigo', 'LOC', 'Documento']" :key="type" class="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" :value="type" v-model="filterTypes" class="w-3 h-3 border-cantuaria-charcoal/20 text-cantuaria-oxford focus:ring-cantuaria-oxford" />
-                    <span class="text-sm text-cantuaria-charcoal/60 group-hover:text-cantuaria-oxford transition-colors uppercase tracking-widest text-[9px] font-bold">{{ type }}</span>
+            <div :class="['space-y-12 mt-12 lg:block', showMobileFilters ? 'block' : 'hidden']">
+              <!-- Tipo de Obra -->
+              <div class="space-y-6">
+                <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-4">Natureza da Obra</h4>
+                <div class="grid grid-cols-1 gap-4">
+                  <label v-for="type in ['Livro', 'Artigo', 'LOC', 'Documento']" :key="type" class="flex items-center gap-3 cursor-pointer group">
+                    <div class="relative flex items-center justify-center">
+                      <input type="checkbox" :value="type" v-model="filterTypes" class="peer appearance-none w-4 h-4 border border-cantuaria-oxford/20 checked:border-cantuaria-gold transition-all" />
+                      <div class="absolute w-2 h-2 bg-cantuaria-gold scale-0 peer-checked:scale-100 transition-transform"></div>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 group-hover:text-cantuaria-oxford transition-colors">{{ type }}</span>
                   </label>
                 </div>
               </div>
 
-              <div v-if="categories.length > 0">
-                <h4 class="text-[9px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40 mb-3">Categorias</h4>
+              <!-- Categorias -->
+              <div v-if="categories.length > 0" class="space-y-6">
+                <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-4">Temáticas</h4>
                 <div class="flex flex-wrap gap-2">
                   <button 
                     v-for="cat in categories" 
                     :key="cat.id" 
                     @click="toggleCategory(cat.slug)"
-                    :class="['px-2 py-1 text-[8px] uppercase tracking-widest font-bold border transition-all', filterCategory === cat.slug ? 'bg-cantuaria-oxford text-white border-cantuaria-oxford' : 'bg-transparent text-cantuaria-charcoal/40 border-cantuaria-charcoal/10 hover:border-cantuaria-oxford']"
+                    :class="['px-3 py-2 text-[9px] uppercase tracking-widest font-bold border transition-all duration-300', filterCategory === cat.slug ? 'bg-cantuaria-oxford text-white border-cantuaria-oxford shadow-md' : 'bg-white text-cantuaria-charcoal/40 border-cantuaria-oxford/5 hover:border-cantuaria-gold hover:text-cantuaria-gold']"
                   >
                     {{ cat.name }}
                   </button>
                 </div>
               </div>
-            </div>
 
-            <NuxtLink to="/pesquisa" class="block text-center mt-8 pt-4 border-t border-cantuaria-charcoal/5 text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">
-              Pesquisa Avançada
-            </NuxtLink>
+              <div class="pt-8 border-t border-cantuaria-oxford/5">
+                <NuxtLink to="/pesquisa" class="group flex items-center justify-between text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-gold">
+                  <span>Busca Avançada</span>
+                  <LucideArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </NuxtLink>
+              </div>
+            </div>
           </div>
         </aside>
 
-        <!-- Document Grid -->
+        <!-- Grade de Documentos -->
         <div class="flex-grow">
-          <div v-if="loading && documents.length === 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10">
+          <!-- Estados de Carregamento e Vazio -->
+          <div v-if="loading && documents.length === 0" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10">
             <DocumentSkeleton v-for="i in 6" :key="i" />
           </div>
 
-          <div v-else-if="documents.length === 0 && !loading" class="py-20 text-center bg-white border border-cantuaria-charcoal/5">
-            <LucideBookX class="w-12 h-12 mx-auto mb-4 text-cantuaria-charcoal/10" />
-            <p class="font-serif text-xl text-cantuaria-charcoal/40">Nenhuma obra encontrada.</p>
+          <div v-else-if="documents.length === 0 && !loading" class="py-32 text-center bg-white border border-cantuaria-oxford/5 shadow-sm max-w-2xl mx-auto">
+            <div class="w-16 h-16 bg-cantuaria-oxford/5 rounded-full flex items-center justify-center mx-auto mb-6">
+              <LucideBookX class="w-8 h-8 text-cantuaria-oxford/20" />
+            </div>
+            <p class="font-serif text-2xl text-cantuaria-oxford/60 mb-4">Nenhum registro encontrado</p>
+            <p class="text-sm text-cantuaria-charcoal/40 mb-8 max-w-xs mx-auto">Ajuste seus filtros ou termos de busca para explorar o acervo.</p>
+            <button @click="searchQuery = ''; filterTypes = []; filterCategory = ''; handleSearch()" class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">Limpar Filtros</button>
           </div>
 
-          <div v-else class="space-y-12">
-            <div :class="['grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 md:gap-10 transition-opacity duration-300', loading ? 'opacity-50 pointer-events-none' : 'opacity-100']">
-              <NuxtLink v-for="doc in documents" :key="doc.id" :to="`/documento/${doc.slug}`">
-                <DocumentCard :document="formatDoc(doc)" />
+          <div v-else class="space-y-20">
+            <div :class="['grid grid-cols-2 xl:grid-cols-3 gap-10 lg:gap-12 transition-all duration-500', loading ? 'opacity-30 blur-[2px]' : 'opacity-100 blur-0']">
+              <NuxtLink v-for="doc in documents" :key="doc.id" :to="`/documento/${doc.slug}`" class="group">
+                <DocumentCard :document="formatDoc(doc)" class="transition-transform duration-500 group-hover:-translate-y-2" />
               </NuxtLink>
             </div>
 
-            <!-- Load More -->
-            <div class="flex justify-center pt-12 border-t border-cantuaria-oxford/5">
-              <button 
-                v-if="hasMore" 
-                @click="loadMore" 
-                :disabled="loading"
-                class="w-full sm:w-auto px-12 py-4 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50"
-              >
-                {{ loading ? 'Carregando...' : 'Carregar mais obras' }}
-              </button>
-              <p v-else class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/20 italic">Fim do acervo disponível</p>
+            <!-- Loader de Scroll Infinito -->
+            <div ref="loadMoreTrigger" class="flex justify-center pt-16 border-t border-cantuaria-oxford/5 min-h-[200px]">
+              <div v-if="loading" class="flex flex-col items-center gap-6">
+                <div class="relative w-12 h-12">
+                  <LucideLoader2 class="w-12 h-12 animate-spin text-cantuaria-oxford/10" stroke-width="1" />
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-2 h-2 bg-cantuaria-gold rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+                <p class="text-[10px] uppercase tracking-[0.4em] font-bold text-cantuaria-oxford/40">Sincronizando Acervo</p>
+              </div>
+              <div v-else-if="!hasMore" class="flex flex-col items-center gap-4">
+                <div class="h-[1px] w-20 bg-cantuaria-oxford/10 mb-2"></div>
+                <p class="text-[10px] uppercase tracking-[0.4em] font-bold text-cantuaria-oxford/20 italic text-center">
+                  Fim dos Registros Disponíveis
+                </p>
+                <p class="text-[8px] uppercase tracking-widest text-cantuaria-gold/40">Projeto Cantuária</p>
+              </div>
             </div>
           </div>
         </div>
@@ -111,9 +141,10 @@ import {
   Search as LucideSearch, 
   Loader2 as LucideLoader2,
   BookX as LucideBookX,
-  Filter as LucideFilter
+  Filter as LucideFilter,
+  ArrowRight as LucideArrowRight
 } from 'lucide-vue-next'
-import { watchDebounced } from '@vueuse/core'
+import { watchDebounced, useIntersectionObserver } from '@vueuse/core'
 
 const route = useRoute()
 const router = useRouter()
@@ -127,6 +158,7 @@ const filterCategory = ref(route.query.categoria?.toString() || '')
 const page = ref(0)
 const pageSize = 9
 const hasMore = ref(true)
+const loadMoreTrigger = ref(null)
 
 useSeoMeta({
   title: 'Biblioteca Digital | Projeto Cantuária',
@@ -183,12 +215,28 @@ const toggleCategory = (slug: string) => {
   handleSearch()
 }
 
-const loadMore = () => { page.value++; fetchDocuments(true) }
+const loadMore = () => {
+  if (loading.value || !hasMore.value) return
+  page.value++
+  fetchDocuments(true)
+}
+
 const formatDoc = (doc: any) => ({
   ...doc,
   authors: doc.authors || [{ name: 'Autor Desconhecido' }],
   thumbnail_url: doc.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'
 })
+
+// Setup infinite scroll
+useIntersectionObserver(
+  loadMoreTrigger,
+  ([{ isIntersecting }]) => {
+    if (isIntersecting && !loading.value && hasMore.value) {
+      loadMore()
+    }
+  },
+  { rootMargin: '300px' }
+)
 
 // Live search for text input
 watchDebounced(searchQuery, () => {
@@ -211,3 +259,10 @@ watch(() => route.query.q, (newQ) => {
   } 
 })
 </script>
+
+<style scoped>
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+</style>
