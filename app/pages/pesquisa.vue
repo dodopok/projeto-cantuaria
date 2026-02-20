@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout>
-    <section class="py-12 md:py-20 bg-cantuaria-oxford text-white relative overflow-hidden">
+    <section class="py-6 md:py-20 bg-cantuaria-oxford text-white relative overflow-hidden">
       <div class="absolute inset-0 opacity-5 grayscale pointer-events-none">
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000')] bg-cover bg-center"></div>
       </div>

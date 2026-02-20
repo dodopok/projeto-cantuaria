@@ -21,7 +21,6 @@
         <aside class="w-full md:w-64 space-y-8 shrink-0">
           <!-- Search Block - Always visible -->
           <div class="bg-white p-6 border border-cantuaria-charcoal/5 shadow-sm">
-            <h3 class="font-serif text-lg text-cantuaria-oxford mb-6 border-b border-cantuaria-oxford/10 pb-2">Pesquisa</h3>
             <div class="relative">
               <input 
                 v-model="searchQuery"

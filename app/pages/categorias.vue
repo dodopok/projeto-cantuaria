@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout>
-    <section class="py-20 bg-[#002147] text-white relative overflow-hidden">
+    <section class="py-6 bg-[#002147] text-white relative overflow-hidden">
       <div class="absolute inset-0 opacity-10 pointer-events-none">
         <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=2000')] bg-cover bg-center grayscale"></div>
       </div>
@@ -12,7 +12,7 @@
       </div>
     </section>
 
-    <section class="py-20 bg-cantuaria-cream min-h-screen">
+    <section class="py-6 bg-cantuaria-cream min-h-screen">
       <div class="container mx-auto px-6">
         <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div v-for="i in 8" :key="i" class="bg-white aspect-square flex flex-col items-center justify-center p-8 border border-cantuaria-charcoal/5 shadow-sm">

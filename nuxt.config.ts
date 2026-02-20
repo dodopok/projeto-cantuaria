@@ -69,12 +69,10 @@ export default defineNuxtConfig({
     redirect: false
   },
   css: ['~/assets/css/main.css'],
+  build: {
+    transpile: ['pdfjs-dist']
+  },
   vite: {
-    build: {
-      rollupOptions: {
-        external: ['pdfjs-dist']
-      }
-    },
     optimizeDeps: {
       include: ['pdfjs-dist']
     }
