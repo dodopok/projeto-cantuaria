@@ -88,7 +88,7 @@
                 <span>Abrir Original (PDF)</span>
               </NuxtLink>
               <NuxtLink 
-                v-if="document.content_markdown"
+                v-if="document.has_markdown"
                 :to="`/documento/${document.slug}/texto`" 
                 class="w-full block py-4 px-8 text-center text-[10px] tracking-[0.2em] font-bold uppercase border border-cantuaria-oxford/20 text-cantuaria-oxford hover:bg-cantuaria-oxford hover:text-white transition-all flex items-center justify-center gap-3"
               >
@@ -155,7 +155,7 @@
                 <div class="h-px w-20 bg-cantuaria-gold/30 mb-10"></div>
                 <!-- Mini visualização do texto - Essencial para o Google indexar o conteúdo inicial -->
                 <div class="prose-cantuaria text-cantuaria-charcoal/70 line-clamp-[15] pointer-events-none opacity-80" v-html="document.content_text"></div>
-                <div v-if="document.content_text" class="mt-8 flex flex-wrap gap-4">
+                <div v-if="document.has_markdown" class="mt-8 flex flex-wrap gap-4">
                   <NuxtLink :to="`/documento/${document.slug}/texto`" class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-gold hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group">
                     Ler versão em texto completo <LucideArrowRight class="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </NuxtLink>

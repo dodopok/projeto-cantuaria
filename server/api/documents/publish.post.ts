@@ -22,6 +22,8 @@ export default defineEventHandler(async (event) => {
       slug: data.slug,
       type: data.type || 'Documento',
       summary: data.summary,
+      content_markdown: data.content_markdown, // Adicionado: Salva o Markdown editado
+      content_text: data.content_text,         // Adicionado: Salva o texto puro (SEO)
       publication_year: data.publication_year,
       language: data.language,
       thumbnail_url: data.thumbnail_url,
