@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const base64Data = buffer.toString('base64')
     const mimeType = fileUrl.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'
 
-    console.log(`[OCR] Enviando para Gemini 2.0 Flash (${sizeMB.toFixed(1)}MB, ${mimeType})...`)
+    console.log(`[OCR] Enviando para Gemini 2.0 Flash 001 (${sizeMB.toFixed(1)}MB, ${mimeType})...`)
 
     const prompt = `Você é um especialista em digitalização de documentos históricos. Analise este documento e gere um Markdown estruturado e fiel ao conteúdo original.
 
@@ -52,7 +52,7 @@ Diretrizes:
 Gere apenas o Markdown resultante, sem explicações, comentários ou delimitadores de código.`
 
     const geminiResponse: any = await $fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
