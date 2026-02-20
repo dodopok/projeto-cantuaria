@@ -38,7 +38,7 @@
     <!-- Visualizador Desktop (Iframe Nativo) -->
     <div v-else-if="url && url.endsWith('.pdf')" class="flex-grow bg-white">
       <iframe 
-        :src="`${url}#view=FitH`" 
+        :src="url" 
         class="w-full h-full border-none"
         title="Visualizador de PDF"
       ></iframe>
