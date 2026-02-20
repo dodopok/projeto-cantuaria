@@ -116,7 +116,7 @@
           <!-- Document Info & Metadata -->
           <div class="lg:col-span-8 space-y-10 md:space-y-12">
             <div>
-              <h1 class="text-4xl md:text-6xl lg:text-7xl font-serif text-cantuaria-oxford leading-[1.1] tracking-tight mb-6">
+              <h1 class="text-4xl md:text-6xl lg:text-7xl font-serif text-cantuaria-oxford leading-[1.1] tracking-tight mb-6 text-balance">
                 {{ document.title }}
               </h1>
               
@@ -127,12 +127,18 @@
                 </div>
               </div>
 
-              <div class="prose prose-lg prose-cantuaria max-w-none">
-                <p class="text-lg md:text-xl leading-relaxed text-cantuaria-charcoal/80 font-serif italic mb-8">
+              <div class="max-w-none">
+                <p class="text-lg md:text-xl leading-relaxed text-cantuaria-charcoal/80 font-serif italic mb-10 text-balance">
                   {{ document.summary }}
                 </p>
-                <div class="h-px w-20 bg-cantuaria-gold/30 mb-8"></div>
-                <div class="text-cantuaria-charcoal/70 leading-relaxed font-sans text-sm md:text-base" v-html="document.content_text || 'Sem prévia de texto disponível.'"></div>
+                <div class="h-px w-20 bg-cantuaria-gold/30 mb-10"></div>
+                <!-- Mini visualização do texto -->
+                <div class="prose-cantuaria text-cantuaria-charcoal/70 line-clamp-[15] pointer-events-none opacity-80" v-html="document.content_text"></div>
+                <div v-if="document.content_text" class="mt-8">
+                  <button @click="showReader = true; readerViewMode = 'text'" class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-gold hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group">
+                    Ler texto completo <LucideArrowRight class="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -146,7 +152,7 @@
         <header class="h-16 border-b border-cantuaria-charcoal/5 flex items-center justify-between px-4 md:px-6 bg-cantuaria-cream/50 backdrop-blur-sm shrink-0 gap-4">
           <span class="font-serif text-base md:text-lg text-cantuaria-oxford truncate max-w-[150px] md:max-w-md shrink">{{ document?.title }}</span>
           <div class="flex items-center gap-3 shrink-0">
-            <div v-if="document?.content_markdown" class="flex border border-cantuaria-oxford/20 rounded-sm overflow-hidden">
+            <div v-if="document?.content_markdown" class="flex border border-cantuaria-oxford/20 rounded-sm overflow-hidden bg-white">
               <button
                 @click="readerViewMode = 'pdf'"
                 :class="['px-3 py-1.5 text-[9px] uppercase tracking-widest font-bold transition-colors', readerViewMode === 'pdf' ? 'bg-cantuaria-oxford text-white' : 'text-cantuaria-oxford/60 hover:text-cantuaria-oxford']"
@@ -163,8 +169,8 @@
         </header>
         <div class="flex-grow relative flex flex-col overflow-hidden" :class="readerViewMode === 'text' ? 'bg-cantuaria-cream' : 'bg-cantuaria-charcoal/95'">
           <Reader v-if="readerViewMode === 'pdf'" :url="document?.file_url" :type="document?.type" class="flex-grow" />
-          <div v-else class="flex-grow overflow-auto flex justify-center p-6 md:p-12">
-            <div class="w-full max-w-3xl bg-white shadow-2xl p-8 md:p-14 h-fit min-h-full font-serif leading-relaxed text-cantuaria-charcoal prose prose-lg max-w-none" v-html="renderedMarkdown"></div>
+          <div v-else class="flex-grow overflow-auto flex justify-center p-6 md:p-12 scroll-smooth">
+            <div class="w-full max-w-3xl bg-white shadow-2xl p-8 md:p-20 h-fit min-h-full prose-cantuaria" v-html="renderedMarkdown"></div>
           </div>
         </div>
       </div>
@@ -222,7 +228,8 @@ import {
   Loader2 as LucideLoader2,
   BookX as LucideBookX,
   X as LucideX,
-  AlertCircle as LucideAlertCircle
+  AlertCircle as LucideAlertCircle,
+  ArrowRight as LucideArrowRight
 } from 'lucide-vue-next'
 import { useScrollLock } from '@vueuse/core'
 import { marked } from 'marked'
@@ -319,3 +326,32 @@ const download = async () => {
 const share = () => { if (navigator.share) navigator.share({ title: document.value.title, url: window.location.href }) }
 onMounted(fetchDocument)
 </script>
+
+<style lang="postcss">
+.prose-cantuaria {
+  @apply font-serif leading-relaxed text-cantuaria-charcoal;
+  
+  & h1 { @apply text-4xl md:text-5xl font-serif text-cantuaria-oxford mt-12 mb-8 leading-tight border-b border-cantuaria-oxford/5 pb-4; }
+  & h2 { @apply text-2xl md:text-3xl font-serif text-cantuaria-oxford mt-10 mb-6 leading-tight; }
+  & h3 { @apply text-xl md:text-2xl font-serif text-cantuaria-oxford mt-8 mb-4 font-bold; }
+  & h4 { @apply text-lg font-serif text-cantuaria-oxford mt-6 mb-3 font-bold italic; }
+  
+  & p { @apply mb-6 text-base md:text-lg text-justify; }
+  
+  & strong { @apply font-bold text-cantuaria-oxford; }
+  & em { @apply italic; }
+  
+  & blockquote {
+    @apply border-l-4 border-cantuaria-gold pl-6 py-2 my-10 italic text-cantuaria-charcoal/70 bg-cantuaria-gold/5;
+    & p { @apply mb-0; }
+  }
+  
+  & ul { @apply list-disc list-outside ml-6 mb-6 space-y-2; }
+  & ol { @apply list-decimal list-outside ml-6 mb-6 space-y-2; }
+  & li { @apply pl-2 text-base md:text-lg; }
+  
+  & hr { @apply border-t border-cantuaria-oxford/10 my-12 w-1/3 mx-auto; }
+  
+  & a { @apply text-cantuaria-gold underline hover:text-cantuaria-oxford transition-colors; }
+}
+</style>
