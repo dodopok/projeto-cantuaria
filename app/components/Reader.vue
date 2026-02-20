@@ -18,7 +18,7 @@
       v-if="isMobile && url && url.endsWith('.pdf')" 
       ref="scroller"
       class="flex-grow overflow-auto relative bg-cantuaria-charcoal overscroll-contain" 
-      style="-webkit-overflow-scrolling: touch;"
+      style="-webkit-overflow-scrolling: touch; touch-action: pan-y;"
     >
       <div v-if="loadingPdf" class="absolute inset-0 flex flex-col items-center justify-center text-white/40 gap-4 z-20 bg-cantuaria-charcoal">
         <LucideLoader2 class="w-8 h-8 animate-spin" />

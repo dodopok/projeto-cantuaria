@@ -84,7 +84,7 @@
             </div>
             <p class="font-serif text-2xl text-cantuaria-oxford/60 mb-4">Nenhum registro encontrado</p>
             <p class="text-sm text-cantuaria-charcoal/40 mb-8 max-w-xs mx-auto">Ajuste seus filtros ou termos de busca para explorar o acervo.</p>
-            <button @click="searchQuery = ''; filterTypes = []; filterCategory = ''; handleSearch()" class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">Limpar Filtros</button>
+            <button @click="searchQuery = ''; filterTypes = []; handleSearch()" class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-gold hover:underline">Limpar Filtros</button>
           </div>
 
           <div v-else class="space-y-20">
@@ -133,12 +133,10 @@ import { watchDebounced, useIntersectionObserver } from '@vueuse/core'
 const route = useRoute()
 const router = useRouter()
 const documents = ref<any[]>([])
-const categories = ref<any[]>([])
 const loading = ref(true)
 const showMobileFilters = ref(false)
 const searchQuery = ref(route.query.q?.toString() || '')
 const filterTypes = ref<string[]>(route.query.tipo ? route.query.tipo.toString().split(',') : [])
-const filterCategory = ref(route.query.categoria?.toString() || '')
 const page = ref(0)
 const pageSize = 9
 const hasMore = ref(true)
@@ -153,14 +151,6 @@ useSeoMeta({
   twitterCard: 'summary_large_image'
 })
 
-const fetchCategories = async () => {
-  try {
-    categories.value = await $fetch('/api/categories') as any[]
-  } catch (error) {
-    console.error('Erro ao buscar categorias:', error)
-  }
-}
-
 const fetchDocuments = async (append = false) => {
   loading.value = true
   try {
@@ -169,8 +159,7 @@ const fetchDocuments = async (append = false) => {
         page: page.value,
         pageSize,
         q: searchQuery.value,
-        tipo: filterTypes.value.join(','),
-        categoria: filterCategory.value
+        tipo: filterTypes.value.join(',')
       }
     })
     if (append) documents.value = [...documents.value, ...data.documents]
@@ -189,14 +178,7 @@ const handleSearch = () => {
   const query: any = { ...route.query }
   if (searchQuery.value) query.q = searchQuery.value; else delete query.q
   if (filterTypes.value.length > 0) query.tipo = filterTypes.value.join(','); else delete query.tipo
-  if (filterCategory.value) query.categoria = filterCategory.value; else delete query.categoria
   router.replace({ query })
-}
-
-const toggleCategory = (slug: string) => {
-  if (filterCategory.value === slug) filterCategory.value = ''
-  else filterCategory.value = slug
-  handleSearch()
 }
 
 const loadMore = () => {
@@ -233,7 +215,6 @@ watch(filterTypes, () => {
 }, { deep: true })
 
 onMounted(() => { 
-  fetchCategories()
   fetchDocuments() 
 })
 
