@@ -64,7 +64,7 @@
       </nav>
 
       <!-- Main Content -->
-      <section class="container mx-auto px-6 py-10 md:py-24">
+      <section class="container mx-auto px-6 py-10 md:py-10">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start">
           
           <!-- Document Cover & Quick Stats -->
