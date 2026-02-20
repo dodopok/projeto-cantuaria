@@ -19,33 +19,61 @@
       </header>
 
       <section class="container mx-auto px-6 py-12">
-        <!-- Tabs & Bulk Actions -->
-        <div class="flex flex-col md:flex-row justify-between items-center border-b border-cantuaria-oxford/10 mb-8 gap-4">
-          <div class="flex gap-8">
-            <button 
-              @click="currentTab = 'pending'"
-              :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
-              currentTab === 'pending' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
-            >
-              Pendentes ({{ pendingCount }})
-            </button>
-            <button 
-              @click="currentTab = 'published'"
-              :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
-              currentTab === 'published' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
-            >
-              Publicados
-            </button>
+        <!-- Tabs & Actions Bar -->
+        <div class="flex flex-col space-y-6 mb-8">
+          <div class="flex flex-col md:flex-row justify-between items-center border-b border-cantuaria-oxford/10 gap-4">
+            <div class="flex gap-8">
+              <button 
+                @click="currentTab = 'pending'; currentPage = 0"
+                :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
+                currentTab === 'pending' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
+              >
+                Pendentes ({{ pendingCount }})
+              </button>
+              <button 
+                @click="currentTab = 'published'; currentPage = 0"
+                :class="['pb-4 text-[10px] uppercase tracking-widest font-bold transition-all border-b-2', 
+                currentTab === 'published' ? 'border-cantuaria-oxford text-cantuaria-oxford' : 'border-transparent text-cantuaria-charcoal/40 hover:text-cantuaria-oxford']"
+              >
+                Publicados
+              </button>
+            </div>
+
+            <div v-if="selectedIds.length > 0 && currentTab === 'pending'" class="pb-4 animate-fade-in">
+              <button 
+                @click="startBatchAnalysis"
+                class="flex items-center gap-2 px-6 py-2 bg-cantuaria-gold text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all"
+              >
+                <LucideSparkles class="w-4 h-4" />
+                Analisar {{ selectedIds.length }} selecionados com IA
+              </button>
+            </div>
           </div>
 
-          <div v-if="selectedIds.length > 0 && currentTab === 'pending'" class="pb-4 animate-fade-in">
-            <button 
-              @click="startBatchAnalysis"
-              class="flex items-center gap-2 px-6 py-2 bg-cantuaria-gold text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all"
-            >
-              <LucideSparkles class="w-4 h-4" />
-              Analisar {{ selectedIds.length }} selecionados com IA
-            </button>
+          <!-- Filters Bar -->
+          <div class="flex flex-col md:flex-row gap-4 bg-white p-4 border border-cantuaria-charcoal/5 shadow-sm rounded-sm">
+            <div class="relative flex-grow">
+              <LucideSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cantuaria-charcoal/30" />
+              <input 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="Pesquisar por título, autor ou tag..." 
+                class="w-full pl-10 pr-4 py-2 bg-cantuaria-cream/50 border border-cantuaria-charcoal/10 focus:outline-none focus:border-cantuaria-oxford text-xs font-sans rounded-sm transition-colors"
+              />
+            </div>
+            <div class="flex gap-4">
+              <select v-model="orderBy" class="bg-cantuaria-cream/50 border border-cantuaria-charcoal/10 px-4 py-2 text-[10px] uppercase tracking-widest font-bold focus:outline-none focus:border-cantuaria-oxford rounded-sm">
+                <option value="created_at:desc">Mais recentes</option>
+                <option value="created_at:asc">Mais antigos</option>
+                <option value="title:asc">Título (A-Z)</option>
+                <option value="title:desc">Título (Z-A)</option>
+              </select>
+              <select v-model="pageSize" class="bg-cantuaria-cream/50 border border-cantuaria-charcoal/10 px-4 py-2 text-[10px] uppercase tracking-widest font-bold focus:outline-none focus:border-cantuaria-oxford rounded-sm">
+                <option :value="10">10 por pág</option>
+                <option :value="25">25 por pág</option>
+                <option :value="50">50 por pág</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -58,45 +86,74 @@
           <p class="font-serif text-xl text-cantuaria-oxford/50">Nenhum documento encontrado.</p>
         </div>
 
-        <div v-else class="bg-white border border-cantuaria-charcoal/5 shadow-sm overflow-hidden">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-cantuaria-cream/50 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 border-b border-cantuaria-charcoal/5">
-                <th v-if="currentTab === 'pending'" class="px-6 py-4 w-10">
-                  <input type="checkbox" @change="toggleAll" :checked="allSelected" class="w-4 h-4 accent-cantuaria-oxford" />
-                </th>
-                <th class="px-6 py-4">Obra</th>
-                <th class="px-6 py-4">Data</th>
-                <th class="px-6 py-4 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-cantuaria-charcoal/5">
-              <tr v-for="item in items" :key="item.id" class="group hover:bg-cantuaria-cream/30 transition-colors">
-                <td v-if="currentTab === 'pending'" class="px-6 py-6">
-                  <input type="checkbox" v-model="selectedIds" :value="item.id" class="w-4 h-4 accent-cantuaria-oxford" />
-                </td>
-                <td class="px-6 py-6">
-                  <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 bg-cantuaria-oxford/5 flex items-center justify-center rounded text-cantuaria-oxford overflow-hidden">
-                      <img v-if="item.thumbnail_url" :src="item.thumbnail_url" class="w-full h-full object-cover" />
-                      <LucideFileText v-else class="w-5 h-5" />
+        <div v-else class="space-y-6">
+          <div class="bg-white border border-cantuaria-charcoal/5 shadow-sm overflow-hidden rounded-sm">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-cantuaria-cream/50 text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 border-b border-cantuaria-charcoal/5">
+                  <th v-if="currentTab === 'pending'" class="px-6 py-4 w-10">
+                    <input type="checkbox" @change="toggleAll" :checked="allSelected" class="w-4 h-4 accent-cantuaria-oxford" />
+                  </th>
+                  <th class="px-6 py-4">Obra</th>
+                  <th class="px-6 py-4">Data</th>
+                  <th class="px-6 py-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-cantuaria-charcoal/5">
+                <tr v-for="item in items" :key="item.id" class="group hover:bg-cantuaria-cream/30 transition-colors">
+                  <td v-if="currentTab === 'pending'" class="px-6 py-6">
+                    <input type="checkbox" v-model="selectedIds" :value="item.id" class="w-4 h-4 accent-cantuaria-oxford" />
+                  </td>
+                  <td class="px-6 py-6">
+                    <div class="flex items-center gap-4">
+                      <div class="w-10 h-10 bg-cantuaria-oxford/5 flex items-center justify-center rounded text-cantuaria-oxford overflow-hidden shrink-0 shadow-inner border border-cantuaria-charcoal/5">
+                        <img v-if="item.thumbnail_url" :src="item.thumbnail_url" class="w-full h-full object-cover" />
+                        <LucideFileText v-else class="w-5 h-5" />
+                      </div>
+                      <div class="min-w-0">
+                        <div class="font-medium text-cantuaria-oxford truncate max-w-md">{{ item.title }}</div>
+                        <div class="flex items-center gap-2 mt-1">
+                          <span class="text-[8px] px-1.5 py-0.5 bg-cantuaria-oxford/5 text-cantuaria-oxford/60 uppercase tracking-widest font-bold rounded-sm">{{ item.type }}</span>
+                          <span v-if="item.authors_list" class="text-[9px] text-cantuaria-charcoal/40 font-serif italic truncate max-w-xs">{{ item.authors_list }}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div class="font-medium text-cantuaria-oxford">{{ item.title }}</div>
-                      <div class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30">{{ item.type }}</div>
+                  </td>
+                  <td class="px-6 py-6 text-sm text-cantuaria-charcoal/60">{{ new Date(item.created_at).toLocaleDateString() }}</td>
+                  <td class="px-6 py-6 text-right whitespace-nowrap">
+                    <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button @click="openReview(item)" class="px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all">Editar</button>
+                      <button @click="deleteItem(item)" class="p-2 text-cantuaria-charcoal/20 hover:text-cantuaria-crimson transition-colors"><LucideTrash2 class="w-4 h-4" /></button>
                     </div>
-                  </div>
-                </td>
-                <td class="px-6 py-6 text-sm text-cantuaria-charcoal/60">{{ new Date(item.created_at).toLocaleDateString() }}</td>
-                <td class="px-6 py-6 text-right">
-                  <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button @click="openReview(item)" class="px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all">Editar</button>
-                    <button @click="deleteItem(item)" class="p-2 text-cantuaria-charcoal/20 hover:text-cantuaria-crimson transition-colors"><LucideTrash2 class="w-4 h-4" /></button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination UI -->
+          <div class="flex items-center justify-between px-2 py-4">
+            <div class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">
+              Mostrando {{ items.length }} de {{ totalItems }} itens
+            </div>
+            <div class="flex items-center gap-2">
+              <button 
+                @click="currentPage--" 
+                :disabled="currentPage === 0"
+                class="p-2 border border-cantuaria-charcoal/10 rounded-sm hover:bg-white disabled:opacity-30 transition-colors"
+              >
+                <LucideChevronLeft class="w-4 h-4" />
+              </button>
+              <span class="text-xs font-bold text-cantuaria-oxford px-4">Página {{ currentPage + 1 }} de {{ Math.ceil(totalItems / pageSize) }}</span>
+              <button 
+                @click="currentPage++" 
+                :disabled="(currentPage + 1) * pageSize >= totalItems"
+                class="p-2 border border-cantuaria-charcoal/10 rounded-sm hover:bg-white disabled:opacity-30 transition-colors"
+              >
+                <LucideChevronRight class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -284,7 +341,19 @@
 </template>
 
 <script setup lang="ts">
-import { ShieldCheck as LucideShieldCheck, FileText as LucideFileText, Sparkles as LucideSparkles, X as LucideX, Image as LucideImage, Loader2 as LucideLoader2, CheckCircle as LucideCheckCircle, Trash2 as LucideTrash2 } from 'lucide-vue-next'
+import { 
+  ShieldCheck as LucideShieldCheck, 
+  FileText as LucideFileText, 
+  Sparkles as LucideSparkles, 
+  X as LucideX, 
+  Image as LucideImage, 
+  Loader2 as LucideLoader2, 
+  CheckCircle as LucideCheckCircle, 
+  Trash2 as LucideTrash2,
+  Search as LucideSearch,
+  ChevronLeft as LucideChevronLeft,
+  ChevronRight as LucideChevronRight
+} from 'lucide-vue-next'
 import 'cropperjs/dist/cropper.css'
 
 definePageMeta({ middleware: 'admin' })
@@ -300,6 +369,13 @@ const publishing = ref(false)
 const uploadingCover = ref(false)
 const capturingPdf = ref(false)
 const performingOCR = ref(false)
+
+// Pagination & Search
+const searchQuery = ref('')
+const currentPage = ref(0)
+const pageSize = ref(10)
+const totalItems = ref(0)
+const orderBy = ref('created_at:desc')
 
 // Crop related
 const showCropModal = ref(false)
@@ -336,12 +412,63 @@ const updateSlugSuggestion = () => {
 }
 
 const fetchData = async () => {
-  loading.value = true; selectedIds.value = []
-  const { data } = await supabase.from('documents').select('*, authors(name), categories(name), tags(name)').eq('status', currentTab.value).order('created_at', { ascending: false })
-  items.value = data?.map(doc => ({ ...doc, authors_list: doc.authors?.map((a: any) => a.name).join(', '), tags_list: doc.tags?.map((t: any) => t.name).join(', '), category_name: doc.categories?.name })) || []
-  const { count } = await supabase.from('documents').select('*', { count: 'exact', head: true }).eq('status', 'pending')
-  pendingCount.value = count || 0; loading.value = false
+  loading.value = true
+  selectedIds.value = []
+  
+  let query = supabase
+    .from('documents')
+    .select('*, authors(name), categories(name), tags(name)', { count: 'exact' })
+    .eq('status', currentTab.value)
+
+  // Aplica busca se houver
+  if (searchQuery.value) {
+    query = query.textSearch('search_vector', searchQuery.value, { 
+      config: 'portuguese',
+      type: 'websearch'
+    })
+  }
+
+  // Aplica ordenação
+  const [column, direction] = orderBy.value.split(':')
+  query = query.order(column, { ascending: direction === 'asc' })
+
+  // Aplica paginação
+  const from = currentPage.value * pageSize.value
+  const to = from + pageSize.value - 1
+  query = query.range(from, to)
+
+  const { data, count, error } = await query
+  
+  if (!error && data) {
+    items.value = data.map(doc => ({ 
+      ...doc, 
+      authors_list: doc.authors?.map((a: any) => a.name).join(', '), 
+      tags_list: doc.tags?.map((t: any) => t.name).join(', '), 
+      category_name: doc.categories?.name 
+    }))
+    totalItems.value = count || 0
+  }
+
+  // Atualiza contador de pendentes (global)
+  const { count: pCount } = await supabase
+    .from('documents')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending')
+  pendingCount.value = pCount || 0
+  
+  loading.value = false
 }
+
+// Debounce para busca
+watchDebounced(searchQuery, () => {
+  currentPage.value = 0
+  fetchData()
+}, { debounce: 500 })
+
+// Watchers para paginação e ordenação
+watch([currentPage, pageSize, orderBy, currentTab], () => {
+  fetchData()
+})
 
 const toggleAll = () => { selectedIds.value = allSelected.value ? [] : items.value.map(i => i.id) }
 const openReview = (item: any) => { editingItem.value = JSON.parse(JSON.stringify(item)) }
@@ -368,10 +495,10 @@ const capturePdfCover = async () => {
     canvas.height = viewport.height; canvas.width = viewport.width
     await page.render({ canvasContext: context!, viewport }).promise
     
+    const Cropper = (await import('cropperjs')).default
     croppingImage.value = canvas.toDataURL('image/jpeg', 0.9)
     showCropModal.value = true
     
-    const Cropper = (await import('cropperjs')).default
     nextTick(() => {
       if (cropperInstance) cropperInstance.destroy()
       cropperInstance = new Cropper(cropImgRef.value!, {
@@ -551,7 +678,6 @@ const deleteItem = async (item: any) => {
 
 const logout = async () => { await supabase.auth.signOut(); navigateTo('/login') }
 
-watch(currentTab, fetchData)
 onMounted(fetchData)
 </script>
 
