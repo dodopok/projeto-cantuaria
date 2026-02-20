@@ -47,7 +47,7 @@
             </div>
 
             <div v-if="selectedIds.length > 0 && currentTab !== 'removal'" class="pb-4 flex gap-3 animate-fade-in">
-              <button 
+              <button
                 v-if="currentTab === 'pending'"
                 @click="startBatchAnalysis"
                 class="flex items-center gap-2 px-6 py-2 bg-cantuaria-gold text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all"
@@ -55,7 +55,14 @@
                 <LucideSparkles class="w-4 h-4" />
                 Analisar com IA
               </button>
-              <button 
+              <button
+                @click="startBatchOcr"
+                class="flex items-center gap-2 px-6 py-2 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all"
+              >
+                <LucideScanText class="w-4 h-4" />
+                OCR em Massa
+              </button>
+              <button
                 @click="deleteSelected"
                 :disabled="deletingBulk"
                 class="flex items-center gap-2 px-6 py-2 bg-cantuaria-crimson text-white text-[10px] uppercase tracking-widest font-bold hover:shadow-lg transition-all disabled:opacity-50"
@@ -328,6 +335,46 @@
         </div>
       </div>
 
+      <!-- Batch OCR Modal -->
+      <div v-if="batchOcrActive" class="fixed inset-0 z-[110] bg-cantuaria-oxford/98 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden relative animate-fade-in">
+          <header class="p-8 border-b border-cantuaria-charcoal/5 flex justify-between items-center bg-white">
+            <div>
+              <h3 class="font-serif text-3xl text-cantuaria-oxford">OCR em Massa</h3>
+              <p class="text-xs text-cantuaria-charcoal/40 uppercase tracking-widest font-bold mt-1">Geração de markdown via Gemini 2.0 Flash</p>
+            </div>
+            <button v-if="!isRunningBatchOcr" @click="closeBatchOcr" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full"><LucideX class="w-6 h-6" /></button>
+          </header>
+
+          <div class="flex-grow overflow-auto p-8 bg-cantuaria-cream/20 space-y-3">
+            <div v-for="res in batchOcrResults" :key="res.id" class="flex items-center gap-4 p-4 border border-cantuaria-charcoal/10 bg-white rounded-sm">
+              <div class="shrink-0">
+                <LucideLoader2 v-if="res.status === 'processing'" class="w-5 h-5 animate-spin text-cantuaria-gold" />
+                <LucideCheckCircle v-else-if="res.status === 'complete'" class="w-5 h-5 text-green-600" />
+                <LucideAlertCircle v-else-if="res.status === 'error'" class="w-5 h-5 text-cantuaria-crimson" />
+                <LucideScanText v-else class="w-5 h-5 text-cantuaria-charcoal/20" />
+              </div>
+              <div class="flex-grow min-w-0">
+                <p class="text-sm font-medium text-cantuaria-oxford truncate">{{ res.originalTitle }}</p>
+                <p v-if="res.status === 'processing'" class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold animate-pulse mt-0.5">Processando com Gemini...</p>
+                <p v-else-if="res.status === 'complete'" class="text-[9px] uppercase tracking-widest font-bold text-green-600 mt-0.5">Markdown gerado ({{ res.chars }} chars)</p>
+                <p v-else-if="res.status === 'error'" class="text-[9px] text-cantuaria-crimson mt-0.5">{{ res.errorMessage }}</p>
+                <p v-else class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 mt-0.5">Aguardando...</p>
+              </div>
+            </div>
+          </div>
+
+          <footer class="p-6 border-t border-cantuaria-charcoal/5 bg-cantuaria-cream/30 flex justify-between items-center">
+            <span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">
+              {{ batchOcrResults.filter(r => r.status === 'complete').length }} de {{ batchOcrResults.length }} concluídos
+            </span>
+            <button v-if="!isRunningBatchOcr" @click="closeBatchOcr" class="px-8 py-3 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 shadow-xl transition-all">
+              Fechar
+            </button>
+          </footer>
+        </div>
+      </div>
+
       <!-- Review/Edit Modal -->
       <div v-if="editingItem" class="fixed inset-0 z-[100] bg-cantuaria-oxford/95 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl overflow-hidden relative animate-fade-in">
@@ -347,8 +394,8 @@
                 <div class="flex gap-2">
                   <button v-if="editingItem.file_url?.toLowerCase().endsWith('.pdf')" @click="runOCRAnalysis" :disabled="analyzing || publishing || performingOCR" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-gold text-cantuaria-gold text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-gold hover:text-white transition-all disabled:opacity-50">
                     <LucideLoader2 v-if="performingOCR" class="w-3.5 h-3.5 animate-spin" />
-                    <LucideSparkles v-else class="w-3.5 h-3.5" />
-                    {{ performingOCR ? 'Extraindo Texto...' : 'Análise com OCR' }}
+                    <LucideScanText v-else class="w-3.5 h-3.5" />
+                    {{ performingOCR ? 'Gerando Markdown...' : 'OCR com Gemini' }}
                   </button>
                   <button @click="analyzeWithAI()" :disabled="analyzing || publishing || performingOCR" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50">
                     <LucideSparkles class="w-3.5 h-3.5" :class="{ 'animate-spin': analyzing }" />
@@ -452,21 +499,23 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  ShieldCheck as LucideShieldCheck, 
-  FileText as LucideFileText, 
-  Sparkles as LucideSparkles, 
-  X as LucideX, 
-  Image as LucideImage, 
-  Loader2 as LucideLoader2, 
-  CheckCircle as LucideCheckCircle, 
+import {
+  ShieldCheck as LucideShieldCheck,
+  FileText as LucideFileText,
+  Sparkles as LucideSparkles,
+  X as LucideX,
+  Image as LucideImage,
+  Loader2 as LucideLoader2,
+  CheckCircle as LucideCheckCircle,
   Trash2 as LucideTrash2,
   Search as LucideSearch,
   ChevronLeft as LucideChevronLeft,
   ChevronRight as LucideChevronRight,
   LayoutList as LucideLayoutList,
   LayoutGrid as LucideLayoutGrid,
-  Pencil as LucidePencil
+  Pencil as LucidePencil,
+  ScanText as LucideScanText,
+  AlertCircle as LucideAlertCircle
 } from 'lucide-vue-next'
 import 'cropperjs/dist/cropper.css'
 
@@ -509,6 +558,11 @@ const isAnalyzingBatch = ref(false)
 const publishingBatch = ref(false)
 const batchResults = ref<any[]>([])
 const completedCount = computed(() => batchResults.value.filter(r => r.status === 'complete').length)
+
+// Batch OCR state
+const batchOcrActive = ref(false)
+const isRunningBatchOcr = ref(false)
+const batchOcrResults = ref<any[]>([])
 
 const slugify = (text: string) => {
   return text
@@ -800,44 +854,64 @@ const analyzeWithAI = async (ocrText?: string) => {
 }
 
 const runOCRAnalysis = async () => {
-  if (!editingItem.value.file_url || !process.client) return;
+  if (!editingItem.value?.file_url || !editingItem.value?.id) return
   performingOCR.value = true
   try {
-    const pdfjs = await import('pdfjs-dist')
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
-    
-    const loadingTask = pdfjs.getDocument({ url: editingItem.value.file_url, disableFontFace: true })
-    const pdf = await loadingTask.promise
-    
-    const numPagesToOCR = Math.min(pdf.numPages, 3) 
-    let fullOcrText = ""
-
-    const { createWorker } = await import('tesseract.js')
-    const worker = await createWorker('por')
-
-    for (let i = 1; i <= numPagesToOCR; i++) {
-      const page = await pdf.getPage(i)
-      const viewport = page.getViewport({ scale: 2.0 })
-      const canvas = document.createElement('canvas')
-      const context = canvas.getContext('2d')
-      canvas.height = viewport.height
-      canvas.width = viewport.width
-      
-      await page.render({ canvasContext: context!, viewport }).promise
-      
-      const { data: { text } } = await worker.recognize(canvas)
-      fullOcrText += text + "\n\n"
+    const result: any = await $fetch('/api/ocr', {
+      method: 'POST',
+      body: {
+        documentId: editingItem.value.id,
+        fileUrl: editingItem.value.file_url
+      }
+    })
+    editingItem.value.content_markdown = result.markdown
+    if (result.extractedText) {
+      await analyzeWithAI(result.extractedText)
     }
-
-    await worker.terminate()
-    await analyzeWithAI(fullOcrText)
-    
-  } catch (err) {
-    console.error('Erro no OCR:', err)
-    alert('Erro ao realizar OCR. Verifique o acesso do arquivo.')
+  } catch (err: any) {
+    console.error('Erro no OCR com Gemini:', err)
+    alert('Erro ao realizar OCR com Gemini: ' + (err.data?.message || err.message || 'Erro desconhecido'))
   } finally {
     performingOCR.value = false
   }
+}
+
+const startBatchOcr = async () => {
+  batchOcrActive.value = true
+  isRunningBatchOcr.value = true
+  const selectedItems = items.value.filter(i => selectedIds.value.includes(i.id))
+  batchOcrResults.value = selectedItems.map(i => ({
+    id: i.id,
+    originalTitle: i.title,
+    file_url: i.file_url,
+    status: 'pending',
+    chars: 0,
+    errorMessage: null
+  }))
+
+  const promises = batchOcrResults.value.map(async (res) => {
+    res.status = 'processing'
+    try {
+      const result: any = await $fetch('/api/ocr', {
+        method: 'POST',
+        body: { documentId: res.id, fileUrl: res.file_url }
+      })
+      res.chars = result.markdown?.length || 0
+      res.status = 'complete'
+    } catch (err: any) {
+      res.status = 'error'
+      res.errorMessage = err.data?.message || err.message || 'Erro desconhecido'
+    }
+  })
+
+  await Promise.all(promises)
+  isRunningBatchOcr.value = false
+}
+
+const closeBatchOcr = () => {
+  batchOcrActive.value = false
+  batchOcrResults.value = []
+  selectedIds.value = []
 }
 
 const deleteItem = async (item: any) => { 

@@ -143,16 +143,29 @@
     <!-- Reader Overlay -->
     <Teleport to="body">
       <div v-if="showReader" class="fixed inset-0 z-[9999] bg-white flex flex-col overflow-hidden" style="pointer-events: auto;">
-        <header class="h-16 border-b border-cantuaria-charcoal/5 flex items-center justify-between px-4 md:px-6 bg-cantuaria-cream/50 backdrop-blur-sm shrink-0">
-          <div class="flex items-center gap-4 truncate">
-            <span class="font-serif text-base md:text-lg text-cantuaria-oxford truncate max-w-[200px] md:max-w-md">{{ document?.title }}</span>
+        <header class="h-16 border-b border-cantuaria-charcoal/5 flex items-center justify-between px-4 md:px-6 bg-cantuaria-cream/50 backdrop-blur-sm shrink-0 gap-4">
+          <span class="font-serif text-base md:text-lg text-cantuaria-oxford truncate max-w-[150px] md:max-w-md shrink">{{ document?.title }}</span>
+          <div class="flex items-center gap-3 shrink-0">
+            <div v-if="document?.content_markdown" class="flex border border-cantuaria-oxford/20 rounded-sm overflow-hidden">
+              <button
+                @click="readerViewMode = 'pdf'"
+                :class="['px-3 py-1.5 text-[9px] uppercase tracking-widest font-bold transition-colors', readerViewMode === 'pdf' ? 'bg-cantuaria-oxford text-white' : 'text-cantuaria-oxford/60 hover:text-cantuaria-oxford']"
+              >PDF</button>
+              <button
+                @click="readerViewMode = 'text'"
+                :class="['px-3 py-1.5 text-[9px] uppercase tracking-widest font-bold transition-colors', readerViewMode === 'text' ? 'bg-cantuaria-oxford text-white' : 'text-cantuaria-oxford/60 hover:text-cantuaria-oxford']"
+              >Texto</button>
+            </div>
+            <button @click="showReader = false" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full transition-colors">
+              <LucideX class="w-6 h-6 text-cantuaria-oxford" />
+            </button>
           </div>
-          <button @click="showReader = false" class="p-2 hover:bg-cantuaria-charcoal/5 rounded-full transition-colors">
-            <LucideX class="w-6 h-6 text-cantuaria-oxford" />
-          </button>
         </header>
-        <div class="flex-grow bg-cantuaria-charcoal/95 relative flex flex-col overflow-hidden">
-          <Reader :url="document?.file_url" :type="document?.type" class="flex-grow" />
+        <div class="flex-grow relative flex flex-col overflow-hidden" :class="readerViewMode === 'text' ? 'bg-cantuaria-cream' : 'bg-cantuaria-charcoal/95'">
+          <Reader v-if="readerViewMode === 'pdf'" :url="document?.file_url" :type="document?.type" class="flex-grow" />
+          <div v-else class="flex-grow overflow-auto flex justify-center p-6 md:p-12">
+            <div class="w-full max-w-3xl bg-white shadow-2xl p-8 md:p-14 h-fit min-h-full font-serif leading-relaxed text-cantuaria-charcoal prose prose-lg max-w-none" v-html="renderedMarkdown"></div>
+          </div>
         </div>
       </div>
     </Teleport>
@@ -202,9 +215,9 @@
 </template>
 
 <script setup lang="ts">
-import { 
-  Share2 as LucideShare2, 
-  Download as LucideDownload, 
+import {
+  Share2 as LucideShare2,
+  Download as LucideDownload,
   BookOpen as LucideBookOpen,
   Loader2 as LucideLoader2,
   BookX as LucideBookX,
@@ -212,12 +225,19 @@ import {
   AlertCircle as LucideAlertCircle
 } from 'lucide-vue-next'
 import { useScrollLock } from '@vueuse/core'
+import { marked } from 'marked'
 
 const route = useRoute()
 const showReader = ref(false)
+const readerViewMode = ref<'pdf' | 'text'>('pdf')
 const document = ref<any>(null)
 const loading = ref(true)
 const downloading = ref(false)
+
+const renderedMarkdown = computed(() => {
+  if (!document.value?.content_markdown) return ''
+  return marked(document.value.content_markdown) as string
+})
 
 // Remoção
 const showRemovalModal = ref(false)
@@ -232,6 +252,7 @@ const removalForm = ref({
 const isLocked = useScrollLock(process.client ? window.document.body : null)
 watch([showReader, showRemovalModal], ([r, m]) => {
   isLocked.value = r || m
+  if (!r) readerViewMode.value = 'pdf'
 })
 
 const fetchDocument = async () => {
