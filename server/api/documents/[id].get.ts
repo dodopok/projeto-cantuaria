@@ -1,11 +1,13 @@
-import { defineEventHandler, createError, getRouterParam } from 'h3'
+import { defineEventHandler, createError, getRouterParam, getQuery } from 'h3'
 
 export default defineEventHandler(async (event) => {
   // O Nitro passará o valor da URL (:id ou :slug) para este parâmetro
   const idOrSlug = getRouterParam(event, 'id')
+  const query = getQuery(event)
+  const isFull = query.full === 'true'
   const adminSupabase = useAdminSupabase()
 
-  console.log(`[API GET] Buscando obra com identificador: "${idOrSlug}"`)
+  console.log(`[API GET] Buscando obra com identificador: "${idOrSlug}" (Full: ${isFull})`)
 
   if (!idOrSlug || idOrSlug === 'undefined') {
     throw createError({ 
@@ -17,9 +19,14 @@ export default defineEventHandler(async (event) => {
   // Sanitização (Tratamos como slug na busca do banco)
   const cleanSlug = idOrSlug.toLowerCase().trim()
 
+  // Seleção de colunas: excluímos content_markdown por padrão se não for 'full'
+  const selectQuery = isFull 
+    ? '*, authors(*), categories(*), tags(*)' 
+    : 'id, title, slug, summary, content_text, file_url, thumbnail_url, type, language, publication_year, created_at, status, has_markdown, authors(*), categories(*), tags(*)'
+
   const { data, error } = await adminSupabase
     .from('documents')
-    .select('*, authors(*), categories(*), tags(*)')
+    .select(selectQuery)
     .eq('slug', cleanSlug)
     .maybeSingle()
 

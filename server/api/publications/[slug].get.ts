@@ -20,9 +20,12 @@ export default defineEventHandler(async (event) => {
 
   if (!pub) throw createError({ statusCode: 404, statusMessage: 'Publicação não encontrada.' })
 
+  // Seleção otimizada para listagem de documentos da publicação
+  const optimizedSelect = 'id, title, slug, type, thumbnail_url, publication_year, language, created_at, has_markdown, authors(name)'
+
   let dbQuery = supabase
     .from('documents')
-    .select('*, authors(*)', { count: 'exact' })
+    .select(optimizedSelect, { count: 'exact' })
     .eq('publication_id', pub.id)
     .eq('status', 'published')
 

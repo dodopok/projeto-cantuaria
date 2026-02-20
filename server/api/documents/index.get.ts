@@ -12,9 +12,12 @@ export default defineEventHandler(async (event) => {
 
   const adminSupabase = useAdminSupabase()
 
+  // Seleção otimizada para listagem pública
+  const optimizedSelect = 'id, title, slug, type, thumbnail_url, publication_year, language, created_at, has_markdown, authors(name), categories!inner(name, slug), tags(name)'
+
   let dbQuery = adminSupabase
     .from('documents')
-    .select('*, authors(*), categories!inner(*), tags(*)', { count: 'exact' })
+    .select(optimizedSelect, { count: 'exact' })
     .eq('status', 'published')
 
   // Pesquisa de Texto (Full Text Search)

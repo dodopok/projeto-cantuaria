@@ -94,7 +94,9 @@ const showScrollTop = ref(false)
 
 // SSR Fetch
 const { data: document, pending } = await useAsyncData(`document-text-${route.params.slug}`, () => 
-  $fetch(`/api/documents/${route.params.slug}`)
+  $fetch(`/api/documents/${route.params.slug}`, {
+    params: { full: 'true' }
+  })
 )
 
 const renderedMarkdown = computed(() => {
