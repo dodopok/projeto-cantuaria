@@ -32,9 +32,18 @@ export default defineEventHandler(async (event) => {
 
   dbQuery = dbQuery.range(page * pageSize, (page + 1) * pageSize - 1)
 
-  // Filtro de Múltiplos Tipos
+  // Filtro de Múltiplos Tipos (Normalizado para bater com o Banco)
   if (type) {
-    const types = type.split(',')
+    const types = type.split(',').map(t => {
+      const clean = t.trim().toLowerCase()
+      if (clean === 'loc') return 'LOC'
+      if (clean === 'livro') return 'Livro'
+      if (clean === 'artigo') return 'Artigo'
+      if (clean === 'revista') return 'Revista'
+      if (clean === 'foto') return 'Foto'
+      if (clean === 'documento') return 'Documento'
+      return t
+    })
     dbQuery = dbQuery.in('type', types)
   }
 

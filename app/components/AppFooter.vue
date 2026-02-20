@@ -18,7 +18,7 @@
         <ul class="space-y-3 text-sm">
           <li><NuxtLink to="/biblioteca?tipo=livro" class="hover:text-cantuaria-gold transition-colors">Livros</NuxtLink></li>
           <li><NuxtLink to="/biblioteca?tipo=artigo" class="hover:text-cantuaria-gold transition-colors">Artigos & Ensaios</NuxtLink></li>
-          <li><NuxtLink to="/biblioteca?tipo=loc" class="hover:text-cantuaria-gold transition-colors">Livros de Oração</NuxtLink></li>
+          <li><NuxtLink to="/biblioteca?tipo=LOC" class="hover:text-cantuaria-gold transition-colors">Livros de Oração</NuxtLink></li>
           <li><NuxtLink to="/biblioteca?tipo=revista" class="hover:text-cantuaria-gold transition-colors">Revistas Históricas</NuxtLink></li>
         </ul>
       </div>
