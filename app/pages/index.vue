@@ -39,7 +39,7 @@
     </section>
 
     <!-- Identity Section -->
-    <section class="py-24 bg-white overflow-hidden">
+    <section class="py-12 bg-white overflow-hidden">
       <div class="container mx-auto px-6">
         <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
           <div class="w-full lg:w-1/2 space-y-8">
@@ -73,7 +73,7 @@
     </section>
 
     <!-- Stats Section -->
-    <section class="py-24 bg-cantuaria-cream border-b border-cantuaria-oxford/5">
+    <section class="py-6 bg-cantuaria-cream border-b border-cantuaria-oxford/5">
       <div class="container mx-auto px-6">
         <div class="grid grid-cols-2 md:grid-cols-3 gap-16 md:gap-8">
           <div v-for="stat in stats" :key="stat.label" class="flex flex-col items-center text-center group">
@@ -89,7 +89,7 @@
     </section>
 
     <!-- Featured Collections -->
-    <section class="py-32 bg-white">
+    <section class="py-12 bg-white">
       <div class="container mx-auto px-6">
         <div class="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
           <div class="max-w-2xl">
