@@ -1,2 +1,10 @@
-User-Agent: *
-Disallow:
+User-agent: *
+Allow: /
+
+# Bloquear acesso de bots a áreas administrativas
+Disallow: /admin/
+Disallow: /login
+Disallow: /api/admin/
+
+# Sitemap
+Sitemap: https://cantuaria.caminhoanglicano.com.br/sitemap.xml

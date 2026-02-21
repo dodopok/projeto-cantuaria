@@ -243,6 +243,41 @@ useSeoMeta({
   twitterCard: 'summary_large_image'
 })
 
+// Dados Estruturados (Schema.org) & Canonical
+useHead(() => {
+  if (!document.value) return {}
+  
+  const url = `https://cantuaria.caminhoanglicano.com.br/documento/${document.value.slug}`
+  const authors = document.value.authors?.map((a: any) => ({
+    "@type": "Person",
+    "name": a.name
+  })) || []
+
+  return {
+    link: [
+      { rel: 'canonical', href: url }
+    ],
+    script: [
+      {
+        type: 'application/ld+json',
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Book", // Ou Article dependendo do tipo
+          "name": document.value.title,
+          "author": authors,
+          "datePublished": document.value.publication_year,
+          "description": document.value.summary,
+          "image": document.value.thumbnail_url,
+          "publisher": {
+            "@type": "Organization",
+            "name": "Projeto Cantuária"
+          }
+        })
+      }
+    ]
+  }
+})
+
 // Remoção
 const showRemovalModal = ref(false)
 const submittingRemoval = ref(false)

@@ -12,6 +12,9 @@ export default defineNuxtConfig({
   ],
   app: {
     head: {
+      htmlAttrs: {
+        lang: 'pt-BR'
+      },
       title: 'Projeto Cantuária | Biblioteca Digital Anglicana',
       meta: [
         { charset: 'utf-8' },
@@ -20,15 +23,14 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' },
         // SEO Open Graph
         { property: 'og:type', content: 'website' },
-        { property: 'og:url', content: 'https://projeto-cantuaria.vercel.app/' },
+        { property: 'og:url', content: 'https://cantuaria.caminhoanglicano.com.br/' },
         { property: 'og:title', content: 'Projeto Cantuária | Biblioteca Digital Anglicana' },
         { property: 'og:description', content: 'Acesse séculos de sabedoria anglicana: livros, artigos, Liturgia e documentos históricos.' },
-        { property: 'og:image', content: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000' },
+        { property: 'og:image', content: 'https://cantuaria.caminhoanglicano.com.br/og-image.jpg' }, // Ideal ter uma imagem fixa na public/
         // Twitter
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'Projeto Cantuária' },
-        { name: 'twitter:description', content: 'Biblioteca Digital da tradição anglicana em português.' },
-        { name: 'twitter:image', content: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000' }
+        { name: 'twitter:description', content: 'Biblioteca Digital da tradição anglicana em português.' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
