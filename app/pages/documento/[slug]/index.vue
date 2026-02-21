@@ -240,7 +240,10 @@ useSeoMeta({
   description: computed(() => document.value?.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.'),
   ogDescription: computed(() => document.value?.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.'),
   ogImage: computed(() => document.value?.thumbnail_url),
-  twitterCard: 'summary_large_image'
+  ogUrl: computed(() => `https://cantuaria.caminhoanglicano.com.br/documento/${document.value?.slug}`),
+  twitterCard: 'summary_large_image',
+  twitterTitle: computed(() => document.value?.title),
+  twitterDescription: computed(() => document.value?.summary)
 })
 
 // Dados Estruturados (Schema.org) & Canonical
@@ -260,9 +263,9 @@ useHead(() => {
     script: [
       {
         type: 'application/ld+json',
-        children: JSON.stringify({
+        innerHTML: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "Book", // Ou Article dependendo do tipo
+          "@type": "Book",
           "name": document.value.title,
           "author": authors,
           "datePublished": document.value.publication_year,
