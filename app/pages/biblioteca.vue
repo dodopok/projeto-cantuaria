@@ -40,6 +40,17 @@
               </div>
             </div>
 
+            <!-- Filtros Ativos (Categoria) -->
+            <div v-if="filterCategory" class="mt-6 p-3 bg-cantuaria-gold/5 border border-cantuaria-gold/20 rounded-sm">
+              <p class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-gold mb-2">Categoria Ativa</p>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] font-serif italic text-cantuaria-oxford truncate">{{ filterCategory.replace(/-/g, ' ') }}</span>
+                <button @click="filterCategory = ''" class="p-1 hover:bg-cantuaria-gold/10 rounded-full transition-colors text-cantuaria-gold" title="Remover filtro">
+                  <LucideX class="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+
             <!-- Ordenação -->
             <div class="space-y-2 mt-6">
               <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-2">Ordenação</h4>
@@ -145,7 +156,8 @@ import {
   BookX as LucideBookX,
   Filter as LucideFilter,
   ArrowRight as LucideArrowRight,
-  ChevronDown as LucideChevronDown
+  ChevronDown as LucideChevronDown,
+  X as LucideX
 } from 'lucide-vue-next'
 import { watchDebounced, useIntersectionObserver } from '@vueuse/core'
 
@@ -156,6 +168,7 @@ const loading = ref(true)
 const showMobileFilters = ref(false)
 const searchQuery = ref(route.query.q?.toString() || '')
 const filterTypes = ref<string[]>(route.query.tipo ? route.query.tipo.toString().split(',') : [])
+const filterCategory = ref(route.query.categoria?.toString() || '')
 const sortOption = ref(route.query.sort?.toString() || 'recent')
 const page = ref(0)
 const pageSize = 9
@@ -180,6 +193,7 @@ const fetchDocuments = async (append = false) => {
         pageSize,
         q: searchQuery.value,
         tipo: filterTypes.value.join(','),
+        categoria: filterCategory.value,
         sort: sortOption.value
       }
     })
@@ -199,6 +213,7 @@ const handleSearch = () => {
   const query: any = { ...route.query }
   if (searchQuery.value) query.q = searchQuery.value; else delete query.q
   if (filterTypes.value.length > 0) query.tipo = filterTypes.value.join(','); else delete query.tipo
+  if (filterCategory.value) query.categoria = filterCategory.value; else delete query.categoria
   if (sortOption.value !== 'recent') query.sort = sortOption.value; else delete query.sort
   router.replace({ query })
 }
@@ -232,7 +247,7 @@ watchDebounced(searchQuery, () => {
 }, { debounce: 500 })
 
 // Live search for filters
-watch([filterTypes, sortOption], () => {
+watch([filterTypes, sortOption, filterCategory], () => {
   handleSearch()
 }, { deep: true })
 
@@ -244,6 +259,12 @@ watch(() => route.query.q, (newQ) => {
   if (newQ !== searchQuery.value) { 
     searchQuery.value = newQ?.toString() || ''; 
   } 
+})
+
+watch(() => route.query.categoria, (newCat) => {
+  if (newCat !== filterCategory.value) {
+    filterCategory.value = newCat?.toString() || ''
+  }
 })
 </script>
 

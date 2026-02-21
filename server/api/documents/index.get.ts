@@ -55,10 +55,10 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Filtro de Categoria (via Slug na tabela relacionada)
-  // O !inner garante que o Supabase filtre a tabela principal baseada na existência/match da relacionada
+  // Filtro de Categoria (via Slugs na tabela relacionada)
   if (category) {
-    dbQuery = dbQuery.eq('categories.slug', category)
+    const categorySlugs = category.split(',').map(s => s.trim())
+    dbQuery = dbQuery.in('categories.slug', categorySlugs)
   }
 
   // Filtro de Múltiplos Tipos
