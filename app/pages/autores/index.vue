@@ -26,10 +26,10 @@
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div 
+          <NuxtLink 
             v-for="author in authors" 
             :key="author.id"
-            @click="goToAuthor(author.name)"
+            :to="`/autores/${author.slug}`"
             class="bg-white p-8 border border-cantuaria-charcoal/5 shadow-sm group cursor-pointer hover:border-cantuaria-gold transition-all"
           >
             <div class="flex justify-between items-start mb-6">
@@ -39,8 +39,8 @@
               <span class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/20">Autor</span>
             </div>
             <h3 class="text-2xl font-serif text-cantuaria-oxford mb-2 group-hover:text-cantuaria-gold transition-colors">{{ author.name }}</h3>
-            <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40 group-hover:text-cantuaria-charcoal/60 transition-colors">Ver todas as obras</p>
-          </div>
+            <p class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40 group-hover:text-cantuaria-charcoal/60 transition-colors">Ver biografia e obras</p>
+          </NuxtLink>
         </div>
       </div>
     </section>
@@ -71,13 +71,6 @@ const fetchAuthors = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const goToAuthor = (name: string) => {
-  navigateTo({
-    path: '/biblioteca',
-    query: { q: name }
-  })
 }
 
 onMounted(fetchAuthors)

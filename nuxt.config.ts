@@ -47,23 +47,29 @@ export default defineNuxtConfig({
     // Static pages with SWR (Stale-While-Revalidate)
     '/': { swr: 3600 }, // 1 hour cache
     '/biblioteca': { swr: 600 }, // 10 min cache
-    '/autores': { swr: 3600 },
+    '/autores': { swr: 600 },
     '/categorias': { swr: 3600 },
     '/contribuir': { static: true },
     
-    // API Caching
-    '/api/categories': { cache: { maxAge: 3600 } },
-    '/api/authors': { cache: { maxAge: 3600 } },
-    '/api/documents': { cache: { maxAge: 600 } },
-    // Explicitly disable cache for write operations
+    // API Caching (Short lived for faster updates)
+    '/api/categories': { cache: { maxAge: 60 } },
+    '/api/authors': { cache: { maxAge: 60 } },
+    '/api/documents': { cache: { maxAge: 60 } },
+    
+    // API Detalhes: Desativamos cache no navegador para evitar dados antigos (304) 
+    // após limpeza do cache do servidor via Admin
     '/api/documents/publish': { cache: false },
     '/api/documents/batch-delete': { cache: false },
     '/api/documents/request-removal': { cache: false },
     '/api/documents/view': { cache: false },
-    '/api/documents/**': { cache: { maxAge: 3600 } },
+    '/api/documents/**': { cache: false }, 
+    '/api/authors/**': { cache: false },
+    '/api/publications/**': { cache: false },
     
-    // Document Pages (SWR for better SEO)
-    '/documento/**': { swr: 3600 }
+    // Document & Author Pages (SWR for better SEO)
+    '/documento/**': { swr: 600 },
+    '/autores/**': { swr: 600 },
+    '/publicacao/**': { swr: 600 }
   },
 
   runtimeConfig: {

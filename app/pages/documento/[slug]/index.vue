@@ -250,10 +250,13 @@ useSeoMeta({
 useHead(() => {
   if (!document.value) return {}
   
-  const url = `https://cantuaria.caminhoanglicano.com.br/documento/${document.value.slug}`
+  const baseUrl = 'https://cantuaria.caminhoanglicano.com.br'
+  const url = `${baseUrl}/documento/${document.value.slug}`
+  
   const authors = document.value.authors?.map((a: any) => ({
     "@type": "Person",
-    "name": a.name
+    "name": a.name,
+    "url": `${baseUrl}/autores/${a.slug}`
   })) || []
 
   // Mapeamento dinâmico de tipos
@@ -267,6 +270,13 @@ useHead(() => {
   }
   const schemaType = typeMap[document.value.type] || 'CreativeWork'
 
+  // Formatação de Datas ISO 8601
+  const publishedDate = document.value.publication_year 
+    ? `${document.value.publication_year}-01-01T08:00:00+00:00`
+    : document.value.created_at
+  
+  const modifiedDate = document.value.created_at || new Date().toISOString()
+
   return {
     link: [
       { rel: 'canonical', href: url }
@@ -279,7 +289,8 @@ useHead(() => {
           "@type": schemaType,
           [schemaType === 'Article' ? 'headline' : 'name']: document.value.title,
           "author": authors,
-          "datePublished": document.value.publication_year ? `${document.value.publication_year}-01-01` : undefined,
+          "datePublished": publishedDate,
+          "dateModified": modifiedDate,
           "description": document.value.summary,
           "image": [document.value.thumbnail_url],
           "publisher": {
@@ -287,7 +298,7 @@ useHead(() => {
             "name": "Projeto Cantuária",
             "logo": {
               "@type": "ImageObject",
-              "url": "https://cantuaria.caminhoanglicano.com.br/favicon.svg"
+              "url": `${baseUrl}/favicon.svg`
             }
           },
           "mainEntityOfPage": {
