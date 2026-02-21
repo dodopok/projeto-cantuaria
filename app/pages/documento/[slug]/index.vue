@@ -256,6 +256,17 @@ useHead(() => {
     "name": a.name
   })) || []
 
+  // Mapeamento dinâmico de tipos
+  const typeMap: Record<string, string> = {
+    'Livro': 'CreativeWork',
+    'LOC': 'CreativeWork',
+    'Revista': 'CreativeWork',
+    'Artigo': 'Article',
+    'Documento': 'Article',
+    'Foto': 'VisualArtwork'
+  }
+  const schemaType = typeMap[document.value.type] || 'CreativeWork'
+
   return {
     link: [
       { rel: 'canonical', href: url }
@@ -265,15 +276,23 @@ useHead(() => {
         type: 'application/ld+json',
         innerHTML: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "Book",
-          "name": document.value.title,
+          "@type": schemaType,
+          [schemaType === 'Article' ? 'headline' : 'name']: document.value.title,
           "author": authors,
-          "datePublished": document.value.publication_year,
+          "datePublished": document.value.publication_year ? `${document.value.publication_year}-01-01` : undefined,
           "description": document.value.summary,
-          "image": document.value.thumbnail_url,
+          "image": [document.value.thumbnail_url],
           "publisher": {
             "@type": "Organization",
-            "name": "Projeto Cantuária"
+            "name": "Projeto Cantuária",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://cantuaria.caminhoanglicano.com.br/favicon.svg"
+            }
+          },
+          "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": url
           }
         })
       }
