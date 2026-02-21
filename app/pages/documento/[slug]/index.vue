@@ -302,6 +302,16 @@ const download = async () => {
 }
 
 const share = () => { if (document.value && navigator.share) navigator.share({ title: document.value.title, url: window.location.href }) }
+
+// Incrementar visualizações (Apenas no cliente)
+onMounted(() => {
+  if (document.value?.id) {
+    $fetch('/api/documents/view', {
+      method: 'POST',
+      body: { id: document.value.id }
+    }).catch(err => console.error('Erro ao registrar view:', err))
+  }
+})
 </script>
 
 <style lang="postcss">

@@ -9,11 +9,12 @@ export default defineEventHandler(async (event) => {
   const category = query.categoria as string || ''
   const seculo = query.seculo as string || ''
   const idioma = query.idioma as string || ''
+  const sort = query.sort as string || 'recent'
 
   const adminSupabase = useAdminSupabase()
 
   // Seleção otimizada para listagem pública
-  const optimizedSelect = 'id, title, slug, type, thumbnail_url, publication_year, language, created_at, has_markdown, authors(name), categories!inner(name, slug), tags(name)'
+  const optimizedSelect = 'id, title, slug, type, thumbnail_url, publication_year, language, created_at, has_markdown, views_count, authors(name), categories!inner(name, slug), tags(name)'
 
   let dbQuery = adminSupabase
     .from('documents')
@@ -26,9 +27,32 @@ export default defineEventHandler(async (event) => {
       config: 'portuguese',
       type: 'websearch'
     })
+  }
+
+  // Ordenação
+  if (search && !query.sort) {
+    // Se estiver pesquisando e não houver ordenação explícita, prioriza relevância
     dbQuery = dbQuery.order('search_vector', { ascending: false })
   } else {
-    dbQuery = dbQuery.order('created_at', { ascending: false })
+    // Mapeamento de ordenações
+    switch (sort) {
+      case 'oldest':
+        dbQuery = dbQuery.order('publication_year', { ascending: true, nullsFirst: false })
+        break
+      case 'newest':
+        dbQuery = dbQuery.order('publication_year', { ascending: false, nullsFirst: false })
+        break
+      case 'alpha':
+        dbQuery = dbQuery.order('title', { ascending: true })
+        break
+      case 'popular':
+        dbQuery = dbQuery.order('views_count', { ascending: false, nullsFirst: false })
+        break
+      case 'recent':
+      default:
+        dbQuery = dbQuery.order('created_at', { ascending: false })
+        break
+    }
   }
 
   // Filtro de Categoria (via Slug na tabela relacionada)

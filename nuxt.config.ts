@@ -57,6 +57,7 @@ export default defineNuxtConfig({
     '/api/documents/publish': { cache: false },
     '/api/documents/batch-delete': { cache: false },
     '/api/documents/request-removal': { cache: false },
+    '/api/documents/view': { cache: false },
     '/api/documents/**': { cache: { maxAge: 3600 } },
     
     // Document Pages (SWR for better SEO)

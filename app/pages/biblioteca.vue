@@ -22,35 +22,53 @@
         
         <!-- Sidebar de Filtros -->
         <aside class="w-full lg:w-80 shrink-0">
-          <div class="lg:sticky lg:top-28 bg-white border border-cantuaria-oxford/5 shadow-[0_10px_30px_-15px_rgba(0,33,71,0.05)] p-8 relative overflow-hidden">
+          <div class="lg:sticky lg:top-28 bg-white border border-cantuaria-oxford/5 shadow-[0_10px_30px_-15px_rgba(0,33,71,0.05)] p-5 relative overflow-hidden">
             <!-- Detalhe decorativo superior em ouro -->
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cantuaria-gold/0 via-cantuaria-gold/40 to-cantuaria-gold/0"></div>
             
             <!-- Bloco de Busca -->
-            <div class="space-y-6">
-              <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-4">Pesquisa Direta</h4>
+            <div class="space-y-2">
+              <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-2">Pesquisa Direta</h4>
               <div class="relative group">
                 <input 
                   v-model="searchQuery"
                   type="text" 
                   placeholder="Título, autor, tema..." 
-                  class="w-full pl-0 pr-4 py-3 bg-transparent border-b border-cantuaria-oxford/10 text-sm focus:outline-none focus:border-cantuaria-gold transition-all placeholder:text-cantuaria-charcoal/20"
+                  class="w-full pl-0 pr-4 py-2 bg-transparent border-b border-cantuaria-oxford/10 text-sm focus:outline-none focus:border-cantuaria-gold transition-all placeholder:text-cantuaria-charcoal/20"
                 />
-                <LucideSearch class="w-4 h-4 absolute right-0 top-3 text-cantuaria-oxford/20 group-focus-within:text-cantuaria-gold transition-colors" />
+                <LucideSearch class="w-4 h-4 absolute right-0 top-2 text-cantuaria-oxford/20 group-focus-within:text-cantuaria-gold transition-colors" />
+              </div>
+            </div>
+
+            <!-- Ordenação -->
+            <div class="space-y-2 mt-6">
+              <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-2">Ordenação</h4>
+              <div class="relative group">
+                <select 
+                  v-model="sortOption" 
+                  class="w-full pl-0 pr-8 py-2 bg-transparent border-b border-cantuaria-oxford/10 text-[10px] uppercase tracking-widest font-bold text-cantuaria-oxford focus:outline-none focus:border-cantuaria-gold transition-all appearance-none cursor-pointer relative z-10"
+                >
+                  <option value="recent" class="text-cantuaria-oxford">Recém Adicionados</option>
+                  <option value="newest" class="text-cantuaria-oxford">Mais Novos (Publicação)</option>
+                  <option value="oldest" class="text-cantuaria-oxford">Mais Antigos (Publicação)</option>
+                  <option value="alpha" class="text-cantuaria-oxford">Ordem Alfabética (A-Z)</option>
+                  <option value="popular" class="text-cantuaria-oxford">Mais Acessados</option>
+                </select>
+                <LucideChevronDown class="w-3.5 h-3.5 absolute right-0 top-2 text-cantuaria-oxford/40 group-focus-within:text-cantuaria-gold transition-colors pointer-events-none z-0" />
               </div>
             </div>
             
             <!-- Filtros Mobile Toggle -->
-            <button @click="showMobileFilters = !showMobileFilters" class="lg:hidden w-full mt-8 py-4 bg-cantuaria-cream/50 border border-cantuaria-oxford/10 text-cantuaria-oxford text-[10px] uppercase font-bold tracking-[0.2em] flex items-center justify-center gap-3">
+            <button @click="showMobileFilters = !showMobileFilters" class="lg:hidden w-full mt-6 py-3 bg-cantuaria-cream/50 border border-cantuaria-oxford/10 text-cantuaria-oxford text-[10px] uppercase font-bold tracking-[0.2em] flex items-center justify-center gap-3">
               <LucideFilter class="w-4 h-4" />
               {{ showMobileFilters ? 'Ocultar Refinamentos' : 'Refinar Busca' }}
             </button>
 
-            <div :class="['space-y-12 mt-12 lg:block', showMobileFilters ? 'block' : 'hidden']">
+            <div :class="['space-y-6 mt-6 lg:block', showMobileFilters ? 'block' : 'hidden']">
               <!-- Tipo de Obra -->
-              <div class="space-y-6">
-                <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-4">Natureza da Obra</h4>
-                <div class="grid grid-cols-1 gap-4">
+              <div class="space-y-4">
+                <h4 class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-oxford/70 border-b border-cantuaria-oxford/5 pb-2">Natureza da Obra</h4>
+                <div class="grid grid-cols-1 gap-3">
                   <label v-for="type in ['Livro', 'Artigo', 'LOC', 'Documento']" :key="type" class="flex items-center gap-3 cursor-pointer group">
                     <div class="relative flex items-center justify-center">
                       <input type="checkbox" :value="type" v-model="filterTypes" class="peer appearance-none w-4 h-4 border border-cantuaria-oxford/20 checked:border-cantuaria-gold transition-all" />
@@ -61,7 +79,7 @@
                 </div>
               </div>
 
-              <div class="pt-8 border-t border-cantuaria-oxford/5">
+              <div class="pt-4 border-t border-cantuaria-oxford/5">
                 <NuxtLink to="/pesquisa" class="group flex items-center justify-between text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-gold">
                   <span>Busca Avançada</span>
                   <LucideArrowRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -126,7 +144,8 @@ import {
   Loader2 as LucideLoader2,
   BookX as LucideBookX,
   Filter as LucideFilter,
-  ArrowRight as LucideArrowRight
+  ArrowRight as LucideArrowRight,
+  ChevronDown as LucideChevronDown
 } from 'lucide-vue-next'
 import { watchDebounced, useIntersectionObserver } from '@vueuse/core'
 
@@ -137,6 +156,7 @@ const loading = ref(true)
 const showMobileFilters = ref(false)
 const searchQuery = ref(route.query.q?.toString() || '')
 const filterTypes = ref<string[]>(route.query.tipo ? route.query.tipo.toString().split(',') : [])
+const sortOption = ref(route.query.sort?.toString() || 'recent')
 const page = ref(0)
 const pageSize = 9
 const hasMore = ref(true)
@@ -159,7 +179,8 @@ const fetchDocuments = async (append = false) => {
         page: page.value,
         pageSize,
         q: searchQuery.value,
-        tipo: filterTypes.value.join(',')
+        tipo: filterTypes.value.join(','),
+        sort: sortOption.value
       }
     })
     if (append) documents.value = [...documents.value, ...data.documents]
@@ -178,6 +199,7 @@ const handleSearch = () => {
   const query: any = { ...route.query }
   if (searchQuery.value) query.q = searchQuery.value; else delete query.q
   if (filterTypes.value.length > 0) query.tipo = filterTypes.value.join(','); else delete query.tipo
+  if (sortOption.value !== 'recent') query.sort = sortOption.value; else delete query.sort
   router.replace({ query })
 }
 
@@ -210,7 +232,7 @@ watchDebounced(searchQuery, () => {
 }, { debounce: 500 })
 
 // Live search for filters
-watch(filterTypes, () => {
+watch([filterTypes, sortOption], () => {
   handleSearch()
 }, { deep: true })
 
