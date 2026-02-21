@@ -171,7 +171,7 @@ const filterTypes = ref<string[]>(route.query.tipo ? route.query.tipo.toString()
 const filterCategory = ref(route.query.categoria?.toString() || '')
 const sortOption = ref(route.query.sort?.toString() || 'recent')
 const page = ref(0)
-const pageSize = 9
+const pageSize = 20
 const hasMore = ref(true)
 const loadMoreTrigger = ref(null)
 
