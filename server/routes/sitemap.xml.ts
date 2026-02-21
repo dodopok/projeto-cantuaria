@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   ] = await Promise.all([
     client.from('documents').select('slug, created_at').eq('status', 'published'),
     client.from('publications').select('slug, created_at'),
-    client.from('authors').select('slug')
+    client.from('authors').select('slug, created_at')
   ])
 
   if (docsErr) console.error('Sitemap Error (Docs):', docsErr)
@@ -38,7 +38,8 @@ export default defineEventHandler(async (event) => {
 
   // 3. Adicionar Autores
   authors?.forEach(author => {
-    sitemap.push(`  <url><loc>${baseUrl}/autores/${author.slug}</loc><priority>0.6</priority></url>`)
+    const lastMod = author.created_at ? new Date(author.created_at).toISOString() : new Date().toISOString()
+    sitemap.push(`  <url><loc>${baseUrl}/autores/${author.slug}</loc><lastmod>${lastMod}</lastmod><priority>0.6</priority></url>`)
   })
 
   // 4. Adicionar Documentos (Landing, Texto e PDF)
