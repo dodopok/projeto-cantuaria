@@ -38,6 +38,40 @@
       </div>
     </section>
 
+    <!-- Identity Section -->
+    <section class="py-24 bg-white overflow-hidden">
+      <div class="container mx-auto px-6">
+        <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+          <div class="w-full lg:w-1/2 space-y-8">
+            <div class="space-y-4">
+              <h2 class="text-4xl md:text-5xl font-serif text-cantuaria-oxford leading-tight">O braço arqueológico-digital do Caminho Anglicano</h2>
+              <div class="h-1 w-20 bg-cantuaria-gold"></div>
+            </div>
+            <p class="text-cantuaria-charcoal/70 text-lg leading-relaxed font-serif italic">
+              O Projeto Cantuária é a biblioteca digital oficial do ecossistema Caminho Anglicano, dedicada a tornar a herança teológica e litúrgica da Igreja acessível a todos os fiéis e pesquisadores lusófonos.
+            </p>
+            <p class="text-cantuaria-charcoal/60 text-sm leading-relaxed">
+              Enquanto o Portal Caminho Anglicano conecta a comunidade através de notícias, localizador de igrejas e recursos práticos, o Projeto Cantuária foca na custódia e digitalização de documentos que formam a nossa identidade histórica e espiritual.
+            </p>
+            <div class="pt-4">
+              <a href="https://www.caminhoanglicano.com.br/" target="_blank" class="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-cantuaria-oxford hover:text-cantuaria-gold transition-all">
+                Conheça o Caminho Anglicano
+                <LucideArrowRight class="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </a>
+            </div>
+          </div>
+          <div class="w-full lg:w-1/2 relative">
+            <div class="aspect-video bg-cantuaria-cream rounded-sm overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-700">
+              <img src="https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=2000" alt="Identity" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-1000" />
+            </div>
+            <!-- Decorative Elements -->
+            <div class="absolute -bottom-6 -left-6 w-32 h-32 border-2 border-cantuaria-gold/20 -z-10"></div>
+            <div class="absolute -top-6 -right-6 w-32 h-32 bg-cantuaria-oxford/5 -z-10 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Stats Section -->
     <section class="py-24 bg-cantuaria-cream border-b border-cantuaria-oxford/5">
       <div class="container mx-auto px-6">
@@ -88,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowUpRight as LucideArrowUpRight, Library as LucideLibrary } from 'lucide-vue-next'
+import { ArrowUpRight as LucideArrowUpRight, Library as LucideLibrary, ArrowRight as LucideArrowRight } from 'lucide-vue-next'
 
 const supabase = useSupabaseClient()
 

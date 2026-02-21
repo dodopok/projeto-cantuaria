@@ -8,9 +8,16 @@
           </div>
           <span class="font-serif text-lg font-bold text-white tracking-tight">Projeto Cantuária</span>
         </div>
-        <p class="text-sm leading-relaxed max-w-xs text-cantuaria-cream/60">
+        <p class="text-sm leading-relaxed max-w-xs text-cantuaria-cream/60 mb-6">
           Uma biblioteca pública digital dedicada à preservação e disseminação da produção litúrgica, teológica e histórica anglicana.
         </p>
+        <div class="pt-6 border-t border-white/5">
+          <p class="text-[10px] uppercase tracking-widest font-bold text-white/30 mb-2">Iniciativa</p>
+          <a href="https://www.caminhoanglicano.com.br/" target="_blank" class="group flex items-center gap-2 text-sm text-cantuaria-cream/60 hover:text-cantuaria-gold transition-colors">
+            Parte do <span class="text-white font-medium group-hover:text-cantuaria-gold transition-colors">Caminho Anglicano</span>
+            <LucideExternalLink class="w-3 h-3 opacity-30 group-hover:opacity-100 transition-opacity" />
+          </a>
+        </div>
       </div>
 
       <div>
@@ -28,7 +35,6 @@
         <ul class="space-y-3 text-sm">
           <li><NuxtLink to="/pesquisa" class="hover:text-cantuaria-gold transition-colors">Pesquisa Avançada</NuxtLink></li>
           <li><NuxtLink to="/contribuir" class="hover:text-cantuaria-gold transition-colors">Enviar Documento</NuxtLink></li>
-          <li><NuxtLink to="/api-docs" class="hover:text-cantuaria-gold transition-colors">Desenvolvedores</NuxtLink></li>
         </ul>
       </div>
 
@@ -50,3 +56,7 @@
     </div>
   </footer>
 </template>
+
+<script setup lang="ts">
+import { ExternalLink as LucideExternalLink } from 'lucide-vue-next'
+</script>
