@@ -3,20 +3,23 @@ export default defineEventHandler(async (event) => {
   const client = useAdminSupabase()
   const baseUrl = 'https://cantuaria.caminhoanglicano.com.br'
 
-  // 1. Buscar slugs de documentos, publicações e autores
+  // 1. Buscar slugs de documentos, publicações, autores e vídeos
   const [
-    { data: docs, error: docsErr }, 
-    { data: pubs, error: pubsErr }, 
-    { data: authors, error: authorsErr }
+    { data: docs, error: docsErr },
+    { data: pubs, error: pubsErr },
+    { data: authors, error: authorsErr },
+    { data: videos, error: videosErr }
   ] = await Promise.all([
     client.from('documents').select('slug, created_at').eq('status', 'published'),
     client.from('publications').select('slug, created_at'),
-    client.from('authors').select('slug, created_at')
+    client.from('authors').select('slug, created_at'),
+    client.from('videos').select('slug, created_at').eq('status', 'published')
   ])
 
   if (docsErr) console.error('Sitemap Error (Docs):', docsErr)
   if (pubsErr) console.error('Sitemap Error (Pubs):', pubsErr)
   if (authorsErr) console.error('Sitemap Error (Authors):', authorsErr)
+  if (videosErr) console.error('Sitemap Error (Videos):', videosErr)
 
   const sitemap = [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -27,7 +30,8 @@ export default defineEventHandler(async (event) => {
     `  <url><loc>${baseUrl}/autores</loc><priority>0.8</priority></url>`,
     `  <url><loc>${baseUrl}/categorias</loc><priority>0.8</priority></url>`,
     `  <url><loc>${baseUrl}/publicacoes</loc><priority>0.8</priority></url>`,
-    `  <url><loc>${baseUrl}/contribuir</loc><priority>0.7</priority></url>`
+    `  <url><loc>${baseUrl}/contribuir</loc><priority>0.7</priority></url>`,
+    `  <url><loc>${baseUrl}/videos</loc><priority>0.8</priority></url>`
   ]
 
   // 2. Adicionar Publicações
@@ -51,6 +55,12 @@ export default defineEventHandler(async (event) => {
     sitemap.push(`  <url><loc>${baseUrl}/documento/${doc.slug}/texto</loc><lastmod>${lastMod}</lastmod><priority>0.7</priority></url>`)
     // Versão PDF
     sitemap.push(`  <url><loc>${baseUrl}/documento/${doc.slug}/pdf</loc><lastmod>${lastMod}</lastmod><priority>0.5</priority></url>`)
+  })
+
+  // 5. Adicionar Vídeos
+  videos?.forEach(video => {
+    const lastMod = video.created_at ? new Date(video.created_at).toISOString() : new Date().toISOString()
+    sitemap.push(`  <url><loc>${baseUrl}/videos/${video.slug}</loc><lastmod>${lastMod}</lastmod><priority>0.7</priority></url>`)
   })
 
   sitemap.push('</urlset>')
