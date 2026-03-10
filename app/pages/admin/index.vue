@@ -5,11 +5,13 @@
 
       <section class="container mx-auto px-6 py-12">
         <div class="flex flex-col space-y-6 mb-8">
-          <AdminTabs 
+          <AdminTabs
             v-model:currentTab="currentTab"
             :pending-count="pendingCount"
             :removal-count="removalRequests.length"
             :publications-count="publications.length"
+            :videos-count="totalVideos"
+            :playlists-count="playlists.length"
             :selected-count="selectedIds.length"
             :deleting-bulk="deletingBulk"
             @start-batch-analysis="startBatchAnalysis"
@@ -44,7 +46,7 @@
             @handle-removal="handleRemoval"
           />
 
-          <AdminPublicationsList 
+          <AdminPublicationsList
             v-else-if="currentTab === 'publications'"
             :publications="publications"
             @open-new="openNewPublication"
@@ -52,7 +54,25 @@
             @delete="deletePublication"
           />
 
-          <AdminDocumentsView 
+          <AdminVideosList
+            v-else-if="currentTab === 'videos'"
+            :videos="videos"
+            v-model:status-filter="videoStatusFilter"
+            @open-new="openNewVideo"
+            @open-edit="openEditVideo"
+            @delete="deleteVideo"
+            @reorder="reorderVideo"
+          />
+
+          <AdminPlaylistsView
+            v-else-if="currentTab === 'playlists'"
+            :playlists="playlists"
+            @open-new="openNewPlaylist"
+            @open-edit="openEditPlaylist"
+            @delete="deletePlaylist"
+          />
+
+          <AdminDocumentsView
             v-else
             :items="items"
             :view-mode="viewMode"
@@ -118,6 +138,24 @@
         @confirm="confirmCrop"
       />
 
+      <AdminVideoModal
+        v-model="editingVideo"
+        :playlists="playlists"
+        :categories="categories"
+        :analyzing="analyzingVideo"
+        :saving="savingVideo"
+        @analyze="analyzeVideoUrl"
+        @update-slug="updateVideoSlug"
+        @save="saveVideo"
+      />
+
+      <AdminPlaylistModal
+        v-model="editingPlaylist"
+        :saving="savingPlaylist"
+        @update-slug="updatePlaylistSlug"
+        @save="savePlaylist"
+      />
+
       <!-- Hidden Inputs for File Uploads -->
       <input ref="coverInput" type="file" class="hidden" @change="handleCoverUpload" accept="image/*" />
       <input ref="pubCoverInput" type="file" class="hidden" @change="handlePublicationCoverUpload" accept="image/*" />
@@ -138,13 +176,17 @@ import AdminBatchOcrModal from '~/components/admin/AdminBatchOcrModal.vue'
 import AdminDocumentModal from '~/components/admin/AdminDocumentModal.vue'
 import AdminPublicationModal from '~/components/admin/AdminPublicationModal.vue'
 import AdminCropModal from '~/components/admin/AdminCropModal.vue'
+import AdminVideosList from '~/components/admin/AdminVideosList.vue'
+import AdminVideoModal from '~/components/admin/AdminVideoModal.vue'
+import AdminPlaylistModal from '~/components/admin/AdminPlaylistModal.vue'
+import AdminPlaylistsView from '~/components/admin/AdminPlaylistsView.vue'
 
 definePageMeta({ middleware: 'admin' })
 
 const supabase = useSupabaseClient()
 const loading = ref(true)
 const loadingDetails = ref(false)
-const currentTab = ref<'pending' | 'published' | 'removal' | 'publications'>('pending')
+const currentTab = ref<'pending' | 'published' | 'removal' | 'publications' | 'videos' | 'playlists'>('pending')
 const items = ref<any[]>([])
 const pendingCount = ref(0)
 const editingItem = ref<any>(null)
@@ -182,6 +224,22 @@ const savingPublication = ref(false)
 const batchOcrActive = ref(false)
 const isRunningBatchOcr = ref(false)
 const batchOcrResults = ref<any[]>([])
+
+// Videos
+const videos = ref<any[]>([])
+const totalVideos = ref(0)
+const editingVideo = ref<any>(null)
+const savingVideo = ref(false)
+const analyzingVideo = ref(false)
+const videoStatusFilter = ref('pending')
+
+// Playlists
+const playlists = ref<any[]>([])
+const editingPlaylist = ref<any>(null)
+const savingPlaylist = ref(false)
+
+// Categories
+const categories = ref<any[]>([])
 
 const slugify = (text: string) => {
   return text
@@ -233,6 +291,16 @@ const fetchData = async () => {
   }
   if (currentTab.value === 'removal') {
     await fetchRemovalRequests()
+    loading.value = false
+    return
+  }
+  if (currentTab.value === 'videos') {
+    await fetchVideos()
+    loading.value = false
+    return
+  }
+  if (currentTab.value === 'playlists') {
+    await fetchPlaylists()
     loading.value = false
     return
   }
@@ -488,7 +556,138 @@ const deletePublication = async (pub: any) => {
   try { await $fetch(`/api/publications/${pub.id}`, { method: 'DELETE' }); await fetchPublications() } catch (err) { alert('Erro ao excluir.') }
 }
 
-onMounted(() => { fetchData(); fetchPublications() })
+// --- Videos ---
+const fetchVideos = async () => {
+  try {
+    const result: any = await $fetch('/api/admin/videos', { query: { status: videoStatusFilter.value } })
+    videos.value = result.data || []
+    totalVideos.value = result.count || 0
+  } catch (err) { console.error('Erro ao buscar vídeos:', err) }
+}
+
+const openNewVideo = () => {
+  editingVideo.value = { title: '', slug: '', url: '', youtube_id: '', summary: '', thumbnail_url: null, publication_year: null, playlist_id: null, category_id: null, position: 0, status: 'pending', authors_list: '', tags_list: '' }
+}
+
+const openEditVideo = async (video: any) => {
+  try {
+    const { data }: any = await $fetch('/api/admin/videos', { query: { status: video.status } })
+    const full = (data || []).find((v: any) => v.id === video.id) || video
+    editingVideo.value = {
+      ...full,
+      authors_list: full.video_authors?.map((va: any) => va.authors?.name).filter(Boolean).join(', ') || '',
+      tags_list: full.video_tags?.map((vt: any) => vt.tags?.name).filter(Boolean).join(', ') || '',
+    }
+  } catch { editingVideo.value = { ...video, authors_list: '', tags_list: '' } }
+}
+
+const updateVideoSlug = () => {
+  if (editingVideo.value?.title && !editingVideo.value.id) {
+    editingVideo.value.slug = `${slugify(editingVideo.value.title)}-${Math.random().toString(36).slice(-4)}`
+  }
+}
+
+const analyzeVideoUrl = async () => {
+  if (!editingVideo.value?.url) return
+  analyzingVideo.value = true
+  try {
+    const result: any = await $fetch('/api/videos/analyze', { method: 'POST', body: { url: editingVideo.value.url } })
+    editingVideo.value = { ...editingVideo.value, ...result }
+    updateVideoSlug()
+  } catch (err: any) {
+    alert('Erro ao analisar vídeo: ' + (err.data?.message || err.message))
+  } finally { analyzingVideo.value = false }
+}
+
+const saveVideo = async () => {
+  if (!editingVideo.value.title || !editingVideo.value.slug) return alert('Preencha título e slug.')
+  savingVideo.value = true
+  try {
+    if (editingVideo.value.id) {
+      await $fetch(`/api/videos/${editingVideo.value.slug}`, { method: 'PUT', body: editingVideo.value })
+    } else {
+      await $fetch('/api/videos', { method: 'POST', body: editingVideo.value })
+    }
+    editingVideo.value = null
+    await fetchVideos()
+  } catch (err: any) { alert('Erro ao salvar vídeo: ' + (err.data?.message || err.message)) } finally { savingVideo.value = false }
+}
+
+const deleteVideo = async (video: any) => {
+  if (!confirm(`Excluir "${video.title}"?`)) return
+  try { await $fetch(`/api/videos/${video.slug}`, { method: 'DELETE' }); await fetchVideos() } catch { alert('Erro ao excluir vídeo.') }
+}
+
+const reorderVideo = async (video: any, direction: 'up' | 'down') => {
+  const siblings = videos.value
+    .filter((v: any) => v.playlist_id === video.playlist_id)
+    .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0))
+
+  const idx = siblings.findIndex((v: any) => v.id === video.id)
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+  if (swapIdx < 0 || swapIdx >= siblings.length) return
+
+  const target = siblings[swapIdx]
+  const posA = video.position ?? idx
+  const posB = target.position ?? swapIdx
+
+  // Atualiza localmente para resposta imediata
+  video.position = posB
+  target.position = posA
+
+  try {
+    await Promise.all([
+      $fetch(`/api/videos/${video.slug}`, { method: 'PUT', body: { ...video, position: posB } }),
+      $fetch(`/api/videos/${target.slug}`, { method: 'PUT', body: { ...target, position: posA } }),
+    ])
+  } catch { alert('Erro ao reordenar vídeos.') }
+}
+
+watch(videoStatusFilter, fetchVideos)
+
+// --- Playlists ---
+const fetchPlaylists = async () => {
+  playlists.value = await $fetch('/api/playlists') as any[]
+}
+
+const openNewPlaylist = () => {
+  editingPlaylist.value = { title: '', slug: '', description: '' }
+}
+
+const openEditPlaylist = (pl: any) => {
+  editingPlaylist.value = JSON.parse(JSON.stringify(pl))
+}
+
+const updatePlaylistSlug = () => {
+  if (editingPlaylist.value?.title && !editingPlaylist.value.id) {
+    editingPlaylist.value.slug = slugify(editingPlaylist.value.title)
+  }
+}
+
+const savePlaylist = async () => {
+  if (!editingPlaylist.value.title || !editingPlaylist.value.slug) return alert('Preencha título e slug.')
+  savingPlaylist.value = true
+  try {
+    if (editingPlaylist.value.id) {
+      await $fetch(`/api/playlists/${editingPlaylist.value.id}`, { method: 'PUT', body: editingPlaylist.value })
+    } else {
+      await $fetch('/api/playlists', { method: 'POST', body: editingPlaylist.value })
+    }
+    editingPlaylist.value = null
+    await fetchPlaylists()
+  } catch (err: any) { alert('Erro ao salvar playlist: ' + (err.data?.message || err.message)) } finally { savingPlaylist.value = false }
+}
+
+const deletePlaylist = async (pl: any) => {
+  if (!confirm(`Excluir "${pl.title}"? Os vídeos vinculados ficarão sem playlist.`)) return
+  try { await $fetch(`/api/playlists/${pl.id}`, { method: 'DELETE' }); await fetchPlaylists() } catch { alert('Erro ao excluir playlist.') }
+}
+
+const fetchCategories = async () => {
+  categories.value = await $fetch('/api/categories') as any[]
+}
+
+onMounted(() => { fetchData(); fetchPublications(); fetchPlaylists(); fetchCategories() })
 </script>
 
 <style scoped>

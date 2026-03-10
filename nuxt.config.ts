@@ -66,6 +66,14 @@ export default defineNuxtConfig({
     '/api/authors/**': { cache: false },
     '/api/publications/**': { cache: false },
     
+    // Videos (cache apenas via defineCachedEventHandler no handler GET)
+    '/api/videos': { cache: false },
+    '/api/videos/**': { cache: false },
+    '/api/playlists': { cache: false },
+    '/api/playlists/**': { cache: false },
+    '/videos': { swr: 600 },
+    '/videos/**': { swr: 600 },
+
     // Document & Author Pages (SWR for better SEO)
     '/documento/**': { swr: 600 },
     '/autores/**': { swr: 600 },
@@ -77,6 +85,7 @@ export default defineNuxtConfig({
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     perplexityApiKey: process.env.PERPLEXITY_API_KEY,
     geminiApiKey: process.env.GEMINI_API_KEY,
+    youtubeApiKey: process.env.YOUTUBE_API_KEY,
 
     // Public keys are exposed to the client
     public: {

@@ -14,6 +14,7 @@
       <!-- Desktop Nav - Hidden on mobile/tablet (< 1024px) -->
       <div class="hidden lg:flex items-center gap-8 xl:gap-10">
         <NuxtLink to="/biblioteca" class="nav-link">Biblioteca</NuxtLink>
+        <NuxtLink to="/videos" class="nav-link">Vídeos</NuxtLink>
         <NuxtLink to="/autores" class="nav-link">Autores</NuxtLink>
         <NuxtLink to="/categorias" class="nav-link">Categorias</NuxtLink>
         <NuxtLink to="/publicacoes" class="nav-link">Publicações</NuxtLink>
@@ -59,6 +60,7 @@
           </div>
 
           <NuxtLink to="/biblioteca" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Biblioteca</NuxtLink>
+          <NuxtLink to="/videos" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Vídeos</NuxtLink>
           <NuxtLink to="/autores" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Autores</NuxtLink>
           <NuxtLink to="/categorias" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Categorias</NuxtLink>
           <NuxtLink to="/publicacoes" @click="isMenuOpen = false" class="text-lg font-serif text-cantuaria-oxford border-b border-cantuaria-cream pb-2">Publicações</NuxtLink>

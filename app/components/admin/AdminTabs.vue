@@ -54,6 +54,8 @@ const props = defineProps<{
   pendingCount: number
   removalCount: number
   publicationsCount: number
+  videosCount: number
+  playlistsCount: number
   selectedCount: number
   deletingBulk: boolean
 }>()
@@ -69,6 +71,8 @@ const tabOptions = computed(() => [
   { id: 'pending', label: 'Pendentes', count: props.pendingCount },
   { id: 'published', label: 'Publicados' },
   { id: 'removal', label: 'Solicitações', count: props.removalCount },
-  { id: 'publications', label: 'Publicações', count: props.publicationsCount }
+  { id: 'publications', label: 'Publicações', count: props.publicationsCount },
+  { id: 'videos', label: 'Vídeos', count: props.videosCount },
+  { id: 'playlists', label: 'Playlists', count: props.playlistsCount },
 ])
 </script>
