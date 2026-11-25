@@ -89,8 +89,10 @@ useSeoMeta({
   description: 'Periódicos, revistas e séries documentais do acervo anglicano.',
 })
 
-const publications = ref<any[]>([])
-const loading = ref(true)
+// Renderizado no servidor
+const { data: publicationsData, pending } = await useAsyncData('publications-list', () => $fetch('/api/publications'))
+const publications = computed(() => (publicationsData.value as any[]) || [])
+const loading = computed(() => pending.value && !publicationsData.value)
 
 const grouped = computed(() => {
   const map = new Map<string, any[]>()
@@ -114,15 +116,4 @@ const grouped = computed(() => {
   }))
 })
 
-const fetchPublications = async () => {
-  try {
-    publications.value = await $fetch('/api/publications') as any[]
-  } catch (err) {
-    console.error('Erro ao buscar publicações:', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(fetchPublications)
 </script>
