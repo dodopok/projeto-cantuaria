@@ -35,7 +35,13 @@ useSeoMeta({
   ogDescription: computed(() => `Visualização do documento original: ${document.value?.title}`),
   ogImage: computed(() => document.value?.thumbnail_url),
   twitterCard: 'summary_large_image',
-  ogType: 'website'
+  ogType: 'website',
+  // Visualizador sem conteúdo próprio: não indexar; a página canônica é a da obra
+  robots: 'noindex, follow'
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: computed(() => `${SITE_URL}/documento/${route.params.slug}`) }]
 })
 
 const download = async () => {
@@ -86,7 +92,7 @@ const download = async () => {
       
       <div class="flex items-center gap-2 shrink-0">
         <NuxtLink 
-          v-if="document.content_markdown"
+          v-if="document.has_markdown"
           :to="`/documento/${document.slug}/texto`" 
           class="hidden sm:flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-widest font-bold text-cantuaria-gold hover:text-white transition-colors border border-cantuaria-gold/20 rounded-sm"
         >
