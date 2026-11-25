@@ -18,16 +18,16 @@
             <LucideArrowLeft class="w-5 h-5 text-cantuaria-oxford" />
           </NuxtLink>
           <div class="flex flex-col truncate">
-            <h1 class="font-serif text-sm md:text-base text-cantuaria-oxford truncate leading-tight">{{ document.title }}</h1>
-            <span class="text-[8px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Versão Integral em Texto</span>
+            <p class="font-serif text-sm md:text-base text-cantuaria-oxford truncate leading-tight">{{ document.title }}</p>
+            <span class="text-[11px] uppercase tracking-widest font-bold text-cantuaria-charcoal/60">Versão integral em texto</span>
           </div>
         </div>
         
         <div class="flex items-center gap-2 shrink-0">
-          <NuxtLink :to="`/documento/${document.slug}/pdf`" class="hidden sm:flex items-center gap-2 px-4 py-2 text-[9px] uppercase tracking-widest font-bold text-cantuaria-oxford/60 hover:text-cantuaria-oxford transition-colors">
+          <NuxtLink :to="`/documento/${document.slug}/pdf`" class="hidden sm:flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-widest font-bold text-cantuaria-oxford/70 hover:text-cantuaria-oxford transition-colors">
             <LucideFileDown class="w-3.5 h-3.5" /> Ver PDF
           </NuxtLink>
-          <button @click="share" class="p-2 text-cantuaria-oxford/60 hover:text-cantuaria-oxford transition-colors">
+          <button @click="share" aria-label="Compartilhar" class="p-2 text-cantuaria-oxford/60 hover:text-cantuaria-oxford transition-colors">
             <LucideShare2 class="w-5 h-5" />
           </button>
         </div>
@@ -36,16 +36,27 @@
 
     <!-- Main Text Content -->
     <main class="container mx-auto px-6 pt-12 md:pt-20">
-      <div class="max-w-3xl mx-auto bg-white shadow-2xl p-8 md:p-24 min-h-[80vh]">
+      <div class="max-w-3xl mx-auto bg-white shadow-2xl px-5 py-10 sm:p-10 md:p-24 min-h-[80vh]">
         <!-- Title Section inside the paper -->
-        <div class="mb-16 pb-12 border-b border-cantuaria-oxford/10 text-center">
-          <h2 class="font-serif text-3xl md:text-5xl text-cantuaria-oxford mb-6 leading-tight">{{ document.title }}</h2>
-          <div class="flex flex-wrap justify-center gap-4 text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">
-            <span v-for="author in document.authors" :key="author.id">{{ author.name }}</span>
-            <span v-if="document.authors?.length">•</span>
+        <div class="mb-12 pb-10 border-b border-cantuaria-oxford/10 text-center">
+          <h1 class="font-serif text-3xl md:text-5xl text-cantuaria-oxford mb-6 leading-tight">{{ document.title }}</h1>
+          <div class="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/70">
+            <NuxtLink v-for="author in document.authors" :key="author.id" :to="`/autores/${author.slug}`" class="hover:text-cantuaria-gold">{{ author.name }}</NuxtLink>
+            <span v-if="document.authors?.length" aria-hidden="true">•</span>
             <span>{{ document.publication_year || 'Data desconhecida' }}</span>
           </div>
         </div>
+
+        <!-- Sobre esta obra: resposta direta antes do texto (útil para leitores, buscadores e IAs) -->
+        <section v-if="document.summary" class="mb-12 p-5 md:p-6 bg-cantuaria-cream/60 border-l-4 border-cantuaria-gold" aria-labelledby="sobre-obra">
+          <h2 id="sobre-obra" class="text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-oxford mb-3">Sobre esta obra</h2>
+          <p class="font-serif text-lg leading-relaxed text-cantuaria-charcoal/90 whitespace-pre-line">{{ document.summary }}</p>
+          <p class="mt-4 text-sm text-cantuaria-charcoal/70 leading-relaxed">
+            Transcrição integral gerada por IA a partir do
+            <NuxtLink :to="`/documento/${document.slug}/pdf`" class="underline underline-offset-2 hover:text-cantuaria-oxford">PDF original</NuxtLink>.
+            Também disponível em <a :href="`/documento/${document.slug}/texto.md`" class="underline underline-offset-2 hover:text-cantuaria-oxford">Markdown</a>.
+          </p>
+        </section>
 
         <!-- Rendered Markdown -->
         <div class="prose-cantuaria" v-html="renderedMarkdown"></div>
@@ -57,7 +68,8 @@
             <LucideBookOpen class="w-5 h-5 text-cantuaria-gold/40" />
             <div class="h-px w-12 bg-cantuaria-gold/30"></div>
           </div>
-          <p class="text-[10px] uppercase tracking-[0.3em] font-bold text-cantuaria-charcoal/20">Projeto Cantuária • Biblioteca Digital Anglicana</p>
+          <p class="text-xs uppercase tracking-[0.25em] font-bold text-cantuaria-charcoal/60">Projeto Cantuária • Biblioteca Digital Anglicana</p>
+          <OrdoPromo v-if="isLiturgicalWork(document)" variant="card" :slug="document.slug" class="text-left mt-10" />
         </footer>
       </div>
     </main>
@@ -65,6 +77,7 @@
     <!-- FAB Back to Top -->
     <button 
       @click="scrollToTop" 
+      aria-label="Voltar ao topo"
       v-show="showScrollTop"
       class="fixed bottom-8 right-8 p-4 bg-cantuaria-oxford text-white rounded-full shadow-2xl hover:bg-cantuaria-gold transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 z-40"
     >
@@ -83,7 +96,15 @@ import {
   BookOpen as LucideBookOpen,
   ChevronUp as LucideChevronUp
 } from 'lucide-vue-next'
-import { marked } from 'marked'
+import { Marked } from 'marked'
+
+// HTML cru vindo da transcrição é exibido como texto (nunca interpretado): evita XSS armazenado
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const md = new Marked({ renderer: { html: (token: any) => escapeHtml(token.text || '') } })
+
+// O título da página já é o <h1>; os títulos da transcrição descem um nível (h1→h2 …)
+const shiftHeadings = (html: string) =>
+  html.replace(/<(\/?)h([1-5])(\s|>)/g, (_m, slash, level, rest) => `<${slash}h${Number(level) + 1}${rest}`)
 
 definePageMeta({
   layout: false
@@ -101,17 +122,53 @@ const { data: document, pending } = await useAsyncData(`document-text-${route.pa
 
 const renderedMarkdown = computed(() => {
   if (!document.value?.content_markdown) return '<p class="text-center italic text-cantuaria-charcoal/40 py-20">Transcrição de texto não disponível para esta obra.</p>'
-  return marked(document.value.content_markdown) as string
+  return shiftHeadings(md.parse(document.value.content_markdown) as string)
 })
 
 useSeoMeta({
-  title: computed(() => document.value ? `Texto: ${document.value.title} | Projeto Cantuária` : 'Texto | Projeto Cantuária'),
-  ogTitle: computed(() => document.value ? `Texto: ${document.value.title} | Projeto Cantuária` : 'Texto | Projeto Cantuária'),
-  description: computed(() => document.value?.summary || 'Leitura integral em texto do acervo digital.'),
-  ogDescription: computed(() => document.value?.summary || 'Leitura integral em texto do acervo digital.'),
+  title: computed(() => document.value ? `${document.value.title} (texto integral) | Projeto Cantuária` : 'Texto | Projeto Cantuária'),
+  ogTitle: computed(() => document.value ? `${document.value.title} (texto integral) | Projeto Cantuária` : 'Texto | Projeto Cantuária'),
+  description: computed(() => document.value?.summary?.slice(0, 300) || 'Leitura integral em texto do acervo digital.'),
+  ogDescription: computed(() => document.value?.summary?.slice(0, 300) || 'Leitura integral em texto do acervo digital.'),
   ogImage: computed(() => document.value?.thumbnail_url),
   twitterCard: 'summary_large_image',
   ogType: 'article'
+})
+
+// Dados estruturados: trilha de navegação + obra (com link para o texto em Markdown)
+useHead(() => {
+  if (!document.value) return {}
+  const d: any = document.value
+  const page = `${SITE_URL}/documento/${d.slug}`
+  return {
+    link: [{ rel: 'alternate', type: 'text/markdown', href: `${page}/texto.md`, title: 'Texto integral em Markdown' }],
+    script: [{
+      type: 'application/ld+json',
+      key: 'ld-texto',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Biblioteca', item: `${SITE_URL}/biblioteca` },
+              { '@type': 'ListItem', position: 2, name: d.title, item: page },
+              { '@type': 'ListItem', position: 3, name: 'Texto integral', item: `${page}/texto` }
+            ]
+          },
+          {
+            '@type': 'WebPage',
+            '@id': `${page}/texto`,
+            name: `${d.title} (texto integral)`,
+            inLanguage: 'pt-BR',
+            isPartOf: { '@id': `${SITE_URL}/#site` },
+            about: { '@id': `${page}#obra` },
+            description: d.summary || undefined
+          }
+        ]
+      })
+    }]
+  }
 })
 
 const scrollToTop = () => { window.scrollTo({ top: 0, behavior: 'smooth' }) }
@@ -137,7 +194,7 @@ onUnmounted(() => {
   & h3 { @apply text-xl md:text-2xl font-serif text-cantuaria-oxford mt-8 mb-4 font-bold; }
   & h4 { @apply text-lg font-serif text-cantuaria-oxford mt-6 mb-3 font-bold italic; }
   
-  & p { @apply mb-6 text-base md:text-lg text-justify; }
+  & p { @apply mb-6 text-lg leading-[1.75] md:text-justify hyphens-auto; }
   
   & strong { @apply font-bold text-cantuaria-oxford; }
   & em { @apply italic; }
