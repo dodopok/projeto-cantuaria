@@ -1,28 +1,18 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { id } = body
+  const id = String(body?.id ?? '')
 
-  if (!id) {
+  if (!UUID_RE.test(id)) {
     throw createError({ statusCode: 400, statusMessage: 'ID do documento é obrigatório' })
   }
 
-  const adminSupabase = useAdminSupabase()
-
-  // Incrementa o contador de visualizações usando a sintaxe de incremento do PostgreSQL via RPC ou SQL puro
-  // Aqui usaremos uma abordagem direta de update para simplicidade, 
-  // mas o ideal em produção seria uma function RPC para evitar race conditions.
-  const { error } = await adminSupabase.rpc('increment_views', { doc_id: id })
-
-  // Se a function RPC não existir (primeira vez), fazemos um fallback via update simples
-  if (error) {
-    console.warn('[View Count] RPC falhou, tentando update simples:', error.message)
-    await adminSupabase
-      .from('documents')
-      .update({ views_count: adminSupabase.raw('views_count + 1') as any })
-      .eq('id', id)
-  }
+  // Incremento atômico via função SQL public.increment_views (só conta obras publicadas)
+  const { error } = await useAdminSupabase().rpc('increment_views', { doc_id: id })
+  if (error) console.warn('[View Count] Falha ao incrementar:', error.message)
 
   return { success: true }
 })

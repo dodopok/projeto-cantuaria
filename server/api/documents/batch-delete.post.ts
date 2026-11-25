@@ -15,18 +15,7 @@ export default defineEventHandler(async (event) => {
     .select('file_url, thumbnail_url')
     .in('id', ids)
 
-  if (docs && docs.length > 0) {
-    const extractPath = (url: string) => url?.split('/public/')[1]?.split('?')[0]
-    
-    const docPaths = docs.map(d => extractPath(d.file_url)).filter(Boolean) as string[]
-    const coverPaths = docs
-      .filter(d => d.thumbnail_url?.includes('covers/'))
-      .map(d => extractPath(d.thumbnail_url))
-      .filter(Boolean) as string[]
-
-    if (docPaths.length > 0) await adminSupabase.storage.from('documents').remove(docPaths)
-    if (coverPaths.length > 0) await adminSupabase.storage.from('covers').remove(coverPaths)
-  }
+  if (docs && docs.length > 0) await removeDocumentFiles(adminSupabase, docs)
 
   // 2. Deletar do Banco
   const { error } = await adminSupabase
