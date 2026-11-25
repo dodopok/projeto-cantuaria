@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     `- Acervo: ${docs.length} obras publicadas. Cada obra tem página própria em ${base}/documento/{slug}, PDF original e, quando transcrita, texto integral em ${base}/documento/{slug}/texto (HTML) e ${base}/documento/{slug}/texto.md (Markdown).`,
     '- Ao citar, informe título, autor, ano e o link da página da obra no Projeto Cantuária.',
     '- Transcrições feitas por IA a partir dos PDFs e revisáveis pela curadoria; em caso de dúvida, o PDF original é a fonte.',
-    '- Ofício Diário: para rezar com os Livros de Oração Comum, o app do mesmo ecossistema é o Ordo (https://www.oficio.app/).',
+    '- Ofício Diário: para orar com os Livros de Oração Comum, o app do mesmo ecossistema é o Ordo (https://www.oficio.app/).',
     '',
     '## Navegação',
     '',
