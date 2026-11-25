@@ -64,14 +64,14 @@
       </nav>
 
       <!-- Main Content -->
-      <section class="container mx-auto px-6 py-10 md:py-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-x-12 gap-y-8 lg:gap-x-24 items-start">
+      <section class="container mx-auto px-6 py-6 md:py-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-x-12 gap-y-6 lg:gap-y-8 lg:gap-x-24 items-start">
           
           <!-- Document Cover & Quick Stats -->
           <div class="lg:col-span-4 lg:row-span-2 space-y-4">
             <NuxtLink 
               :to="`/documento/${document.slug}/pdf`"
-              class="relative block group shadow-2xl border border-cantuaria-charcoal/5 cursor-pointer overflow-hidden max-w-[200px] sm:max-w-xs mx-auto lg:max-w-none"
+              class="relative block group shadow-2xl border border-cantuaria-charcoal/5 cursor-pointer overflow-hidden max-w-[180px] sm:max-w-xs mx-auto lg:max-w-none"
             >
               <img :src="document.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'" :alt="`Capa: ${document.title}`" fetchpriority="high" class="w-full aspect-[3/4.5] object-cover transition-transform duration-700 group-hover:scale-105" />
               <div class="absolute inset-0 bg-cantuaria-oxford/20 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -130,24 +130,31 @@
           <!-- Título e autoria: no celular vem antes da capa -->
           <div class="lg:col-span-8 order-first lg:order-none">
             <div>
-              <h1 class="text-4xl md:text-6xl lg:text-7xl font-serif text-cantuaria-oxford leading-[1.1] tracking-tight mb-6 text-balance">
+              <h1 class="text-[1.75rem] md:text-6xl lg:text-7xl font-serif text-cantuaria-oxford leading-[1.15] tracking-tight mb-3 lg:mb-6 text-balance">
                 {{ document.title }}
               </h1>
               
-              <div class="flex flex-col gap-6 pb-2 lg:mb-8 lg:pb-8 lg:border-b border-cantuaria-oxford/10">
-                <div class="flex flex-wrap items-center gap-6">
+              <div class="flex flex-col gap-3 lg:gap-6 lg:mb-8 lg:pb-8 lg:border-b border-cantuaria-oxford/10">
+                <!-- Celular: autores numa linha só -->
+                <p v-if="document.authors?.length" class="lg:hidden font-serif text-lg text-cantuaria-oxford leading-snug">
+                  <span class="text-cantuaria-charcoal/60 text-base">por </span>
+                  <template v-for="(author, i) in document.authors" :key="author.id">
+                    <NuxtLink :to="`/autores/${author.slug}`" class="hover:text-cantuaria-gold underline-offset-4 hover:underline">{{ author.name }}</NuxtLink><span v-if="i < document.authors.length - 1">, </span>
+                  </template>
+                </p>
+                <div class="hidden lg:flex flex-wrap items-center gap-6">
                   <div v-for="author in document.authors" :key="author.id" class="flex flex-col">
                     <span class="text-[11px] uppercase tracking-widest font-bold text-cantuaria-charcoal/60 mb-1">Autor</span>
                     <NuxtLink :to="`/autores/${author.slug}`" class="font-serif text-xl text-cantuaria-oxford leading-none hover:text-cantuaria-gold underline-offset-4 hover:underline">{{ author.name }}</NuxtLink>
                   </div>
                 </div>
 
-                <!-- Tags do Documento -->
-                <div v-if="document.tags && document.tags.length > 0" class="flex flex-wrap gap-2">
+                <!-- Tags do Documento: no celular uma linha só, com rolagem horizontal sem barra -->
+                <div v-if="document.tags && document.tags.length > 0" class="no-scrollbar -mx-6 px-6 lg:mx-0 lg:px-0 flex flex-nowrap lg:flex-wrap gap-2 overflow-x-auto lg:overflow-visible">
                   <span 
                     v-for="tag in document.tags" 
                     :key="tag.id"
-                    class="px-3 py-1 bg-cantuaria-gold/5 border border-cantuaria-gold/10 text-cantuaria-gold text-[11px] uppercase tracking-widest font-bold rounded-full"
+                    class="shrink-0 whitespace-nowrap px-3 py-1 bg-cantuaria-gold/5 border border-cantuaria-gold/10 text-cantuaria-gold text-[11px] uppercase tracking-widest font-bold rounded-full"
                   >
                     {{ tag.name }}
                   </span>
@@ -391,6 +398,9 @@ onMounted(() => {
 </script>
 
 <style lang="postcss">
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 .prose-cantuaria {
   @apply font-serif leading-relaxed text-cantuaria-charcoal;
   
