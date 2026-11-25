@@ -18,15 +18,16 @@ export default defineNuxtConfig({
       title: 'Projeto Cantuária | Biblioteca Digital Anglicana',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: 'Uma biblioteca pública digital dedicada à preservação e disseminação da produção litúrgica, teológica e histórica anglicana em língua portuguesa.' },
         { name: 'format-detection', content: 'telephone=no' },
         // SEO Open Graph
         { property: 'og:type', content: 'website' },
-        { property: 'og:url', content: 'https://cantuaria.caminhoanglicano.com.br/' },
         { property: 'og:title', content: 'Projeto Cantuária | Biblioteca Digital Anglicana' },
         { property: 'og:description', content: 'Acesse séculos de sabedoria anglicana: livros, artigos, Liturgia e documentos históricos.' },
-        { property: 'og:image', content: 'https://cantuaria.caminhoanglicano.com.br/og-image.jpg' }, // Ideal ter uma imagem fixa na public/
+        { property: 'og:image', content: 'https://cantuaria.caminhoanglicano.com.br/og-image.jpg' },
+        { property: 'og:site_name', content: 'Projeto Cantuária' },
+        { property: 'og:locale', content: 'pt_BR' },
         // Twitter
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'Projeto Cantuária' },
@@ -50,6 +51,10 @@ export default defineNuxtConfig({
     '/autores': { swr: 600 },
     '/categorias': { swr: 3600 },
     '/contribuir': { static: true },
+    '/sitemap.xml': { swr: 3600 },
+    '/llms.txt': { swr: 3600 },
+    '/documento/*/texto.md': { swr: 600 },
+    '/api/stats': { cache: { maxAge: 600 } },
     
     // API Caching (Short lived for faster updates)
     '/api/categories': { cache: { maxAge: 60 } },

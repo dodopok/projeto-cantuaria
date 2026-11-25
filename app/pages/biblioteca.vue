@@ -251,8 +251,27 @@ watch([filterTypes, sortOption, filterCategory], () => {
   handleSearch()
 }, { deep: true })
 
-onMounted(() => { 
-  fetchDocuments() 
+// Primeira página renderizada no servidor: buscadores e IAs recebem a lista de obras no HTML
+const { data: initialPage } = await useAsyncData(`biblioteca-${JSON.stringify(route.query)}`, () =>
+  $fetch('/api/documents', {
+    params: {
+      page: 0,
+      pageSize,
+      q: searchQuery.value,
+      tipo: filterTypes.value.join(','),
+      categoria: filterCategory.value,
+      sort: sortOption.value
+    }
+  })
+)
+if (initialPage.value) {
+  documents.value = (initialPage.value as any).documents
+  hasMore.value = (initialPage.value as any).hasMore
+  loading.value = false
+}
+
+onMounted(() => {
+  if (!initialPage.value) fetchDocuments()
 })
 
 watch(() => route.query.q, (newQ) => { 
