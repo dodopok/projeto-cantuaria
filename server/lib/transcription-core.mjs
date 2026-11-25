@@ -22,8 +22,13 @@ const MAX_CHUNK_BYTES = 20 * 1024 * 1024
 // Importá-lo no topo faria o servidor inteiro falhar ao iniciar: o build "legacy"
 // usa DOMMatrix/ImageData/Path2D, que não existem no Node. Para dividir páginas
 // (extractPages) nada é renderizado, então stubs mínimos bastam.
+//
+// Um único pdf.js por processo: o unpdf traz um pdf.js próprio (outra versão) que
+// registra o worker no mesmo globalThis.pdfjsWorker. Misturar os dois dá
+// "API version X does not match Worker version Y". Por isso o worker é sempre o do
+// pdfjs-dist e o unpdf é configurado para usar este mesmo módulo (extractPdfText).
 let pdfjsPromise = null
-function getPdfjs() {
+export function getPdfjs() {
   if (!pdfjsPromise) {
     pdfjsPromise = (async () => {
       globalThis.DOMMatrix ??= class DOMMatrix {
@@ -33,11 +38,23 @@ function getPdfjs() {
       globalThis.Path2D ??= class Path2D {}
       // Worker "falso" no mesmo processo: não depende de arquivo de worker resolvido
       // em tempo de execução (que não sobrevive ao bundle da Vercel).
-      globalThis.pdfjsWorker ??= await import('pdfjs-dist/legacy/build/pdf.worker.mjs')
-      return import('pdfjs-dist/legacy/build/pdf.mjs')
+      globalThis.pdfjsWorker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs')
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+      // Faz o unpdf usar este mesmo pdf.js (em vez do bundle próprio, de outra versão)
+      const { definePDFJSModule } = await import('unpdf')
+      await definePDFJSModule(() => Promise.resolve(pdfjs))
+      return pdfjs
     })()
   }
   return pdfjsPromise
+}
+
+/** Texto da camada de texto do PDF (sem OCR), usando o mesmo pdf.js do restante. */
+export async function extractPdfText(bytes) {
+  await getPdfjs()
+  const { extractText } = await import('unpdf')
+  const { text } = await extractText(new Uint8Array(bytes), { mergePages: true })
+  return String(text || '')
 }
 
 async function loadPdf(bytes) {
