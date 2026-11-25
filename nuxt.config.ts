@@ -83,8 +83,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Private keys are only available on the server
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
-    perplexityApiKey: process.env.PERPLEXITY_API_KEY,
-    geminiApiKey: process.env.GEMINI_API_KEY,
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+    // Modelos opcionais (padrão: Haiku 5.5 na transcrição, Sonnet 5.5 nos metadados)
+    anthropicOcrModel: process.env.ANTHROPIC_OCR_MODEL,
+    anthropicMetadataModel: process.env.ANTHROPIC_METADATA_MODEL,
     youtubeApiKey: process.env.YOUTUBE_API_KEY,
 
     // Public keys are exposed to the client
@@ -95,6 +97,14 @@ export default defineNuxtConfig({
   },
   supabase: {
     redirect: false
+  },
+  nitro: {
+    // Cada parte da transcrição leva de 20 s a ~2 min no Claude
+    vercel: {
+      functions: {
+        maxDuration: 300
+      }
+    }
   },
   css: ['~/assets/css/main.css'],
   build: {

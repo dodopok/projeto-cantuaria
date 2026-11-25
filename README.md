@@ -7,9 +7,10 @@ O **Projeto Cantuária** é uma plataforma digital centralizada para a preserva�
 - **Framework:** [Nuxt 3](https://nuxt.com/) (Vue.js) com renderização híbrida (SSR/SWR).
 - **Estilização:** [Tailwind CSS](https://tailwindcss.com/) com foco em tipografia clássica (**EB Garamond** & **Inter**).
 - **Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL) com Full-Text Search e Row Level Security (RLS).
-- **Processamento de IA:**
-  - **Gemini 2.0 Flash:** Responsável por OCR de alta fidelidade e transcrição estruturada em Markdown.
-  - **Perplexity AI:** Curadoria inteligente e extração automática de metadados.
+- **Processamento de IA (Claude / Anthropic):**
+  - **Transcrição integral:** o PDF é dividido em faixas de páginas (`server/lib/transcription-core.mjs`) e cada faixa é transcrita para Markdown (padrão: Claude Haiku 5.5). As partes ficam em `transcription_chunks`, então dá para retomar e não há limite de tamanho do documento.
+  - **Metadados:** título, autores, categoria (reaproveitando as existentes), tags, resumo, ano, idioma e tipo com saída estruturada (padrão: Claude Sonnet 5.5).
+  - **Reprocessamento em lote:** `node scripts/retranscrever-acervo.mjs --truncated --out ./retranscricoes` (simulação; `--apply` grava no banco).
 - **Ícones:** [Lucide Vue Next](https://lucide.dev/).
 
 ## 🏛️ Funcionalidades Principais
@@ -20,7 +21,7 @@ O **Projeto Cantuária** é uma plataforma digital centralizada para a preserva�
   - **Transcrição em Texto:** Leitura fluida de transcrições Markdown para melhor acessibilidade e indexação.
 - **Pesquisa Avançada:** Filtros cronológicos, linguísticos e temáticos integrados ao motor de busca vetorial.
 - **Painel Administrativo Robusto:**
-  - **Batch Actions:** Análise de metadados e atualização de Markdown em massa via Gemini.
+  - **Batch Actions:** Análise de metadados e transcrição integral em massa via Claude.
   - **Gestão de Acervo:** Fluxo de revisão de sugestões, edição manual de transcrições e geração de capas institucionais.
   - **Otimização de Performance:** Listagens administrativas ultrarrápidas através de seleção cirúrgica de colunas e colunas virtuais (`has_markdown`).
 
@@ -50,8 +51,8 @@ O **Projeto Cantuária** é uma plataforma digital centralizada para a preserva�
    SUPABASE_URL=...
    SUPABASE_KEY=...
    SUPABASE_SERVICE_KEY=...
-   PERPLEXITY_API_KEY=...
-   GEMINI_API_KEY=...
+   ANTHROPIC_API_KEY=...
+   YOUTUBE_API_KEY=...
    ```
 
 3. **Banco de Dados:**

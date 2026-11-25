@@ -112,6 +112,7 @@
         :uploading-cover="uploadingCover"
         :capturing-pdf="capturingPdf"
         :performing-o-c-r="performingOCR"
+        :ocr-progress="ocrProgress"
         @run-ocr="runOCRAnalysis"
         @analyze="analyzeWithAI()"
         @trigger-upload="($refs.coverInput as any).click()"
@@ -165,6 +166,7 @@
 
 <script setup lang="ts">
 import { Loader2 as LucideLoader2 } from 'lucide-vue-next'
+import type { TranscriptionProgress } from '~/composables/useTranscription'
 import AdminHeader from '~/components/admin/AdminHeader.vue'
 import AdminTabs from '~/components/admin/AdminTabs.vue'
 import AdminFilters from '~/components/admin/AdminFilters.vue'
@@ -195,6 +197,8 @@ const publishing = ref(false)
 const uploadingCover = ref(false)
 const capturingPdf = ref(false)
 const performingOCR = ref(false)
+const ocrProgress = ref('')
+const { transcribe } = useTranscription()
 const deletingBulk = ref(false)
 const viewMode = ref<'table' | 'grid'>('table')
 const croppingTarget = ref<'document' | 'publication'>('document')
@@ -246,7 +250,7 @@ const slugify = (text: string) => {
     .toString()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\p{Mn}/gu, '') // remove acentos (marcas combinantes após NFD)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-+/g, '-')
@@ -423,7 +427,7 @@ const startBatchAnalysis = async () => {
   batchResults.value = selectedItems.map(i => ({ id: i.id, originalTitle: i.title, file_url: i.file_url, type: i.type, status: 'processing', data: null, errorMessage: null }))
   const promises = batchResults.value.map(async (res) => {
     try {
-      const analysis: any = await $fetch('/api/analyze', { method: 'POST', body: { documentId: res.id, fileUrl: res.file_url, filename: res.originalTitle } })
+      const analysis: any = await $fetch('/api/analyze', { method: 'POST', body: { documentId: res.id, filename: res.originalTitle } })
       res.data = analysis; res.status = 'complete'
     } catch (err: any) { res.status = 'error'; res.errorMessage = err.message }
   })
@@ -498,33 +502,55 @@ const handlePublicationCoverUpload = (e: any) => {
 const analyzeWithAI = async (ocrText?: string) => {
   analyzing.value = true
   try {
-    const analysis: any = await $fetch('/api/analyze', { method: 'POST', body: { documentId: editingItem.value.id, fileUrl: editingItem.value.file_url, filename: editingItem.value.title, ocrText } })
+    const analysis: any = await $fetch('/api/analyze', { method: 'POST', body: { documentId: editingItem.value.id, filename: editingItem.value.title, ocrText } })
     editingItem.value = { ...editingItem.value, ...analysis }; updateSlugSuggestion()
   } finally { analyzing.value = false }
 }
 
+const formatProgress = (p: TranscriptionProgress) =>
+  `${p.pagesDone}/${p.totalPages ?? '?'} págs.${p.errors ? ` · ${p.errors} com erro` : ''}`
+
 const runOCRAnalysis = async () => {
   if (!editingItem.value?.file_url || !editingItem.value?.id) return
+  const documentId = editingItem.value.id
   performingOCR.value = true
+  ocrProgress.value = 'Preparando...'
   try {
-    const result: any = await $fetch('/api/ocr', { method: 'POST', body: { documentId: editingItem.value.id, fileUrl: editingItem.value.file_url } })
-    editingItem.value.content_markdown = result.markdown
-    if (result.extractedText) await analyzeWithAI(result.extractedText)
-  } catch (err: any) { alert('Erro no OCR: ' + (err.data?.message || err.message)) } finally { performingOCR.value = false }
+    const result = await transcribe(documentId, { onProgress: (p) => { ocrProgress.value = formatProgress(p) } })
+    // O texto integral fica no banco; recarrega para o editor
+    const { data } = await supabase.from('documents').select('content_markdown').eq('id', documentId).single()
+    if (editingItem.value?.id === documentId) editingItem.value.content_markdown = data?.content_markdown || ''
+    if (!result.complete) {
+      alert(`Transcrição parcial: ${result.missingPages.length} parte(s) falharam. Clique de novo em "Transcrever" para retomar só o que faltou.`)
+    }
+    if (result.extractedText && editingItem.value?.id === documentId) await analyzeWithAI(result.extractedText)
+  } catch (err: any) {
+    alert('Erro na transcrição: ' + (err.data?.message || err.message))
+  } finally {
+    performingOCR.value = false
+    ocrProgress.value = ''
+  }
 }
 
 const startBatchOcr = async () => {
   batchOcrActive.value = true; isRunningBatchOcr.value = true
   const selectedItems = items.value.filter(i => selectedIds.value.includes(i.id))
-  batchOcrResults.value = selectedItems.map(i => ({ id: i.id, originalTitle: i.title, file_url: i.file_url, status: 'pending', chars: 0, errorMessage: null }))
-  const promises = batchOcrResults.value.map(async (res) => {
+  batchOcrResults.value = selectedItems.map(i => ({ id: i.id, originalTitle: i.title, file_url: i.file_url, status: 'pending', chars: 0, progress: '', errorMessage: null }))
+  // Um documento por vez (cada um já transcreve várias partes em paralelo)
+  for (const res of batchOcrResults.value) {
+    if (!res.file_url?.toLowerCase().split('?')[0].endsWith('.pdf')) {
+      res.status = 'error'; res.errorMessage = 'Apenas PDF'
+      continue
+    }
     res.status = 'processing'
     try {
-      const result: any = await $fetch('/api/ocr', { method: 'POST', body: { documentId: res.id, fileUrl: res.file_url } })
-      res.chars = result.markdown?.length || 0; res.status = 'complete'
+      const result = await transcribe(res.id, { onProgress: (p) => { res.progress = formatProgress(p) } })
+      res.chars = result.chars
+      res.status = result.complete ? 'complete' : 'error'
+      if (!result.complete) res.errorMessage = `Parcial: ${result.missingPages.length} parte(s) com erro — rode de novo para retomar`
     } catch (err: any) { res.status = 'error'; res.errorMessage = err.data?.message || err.message }
-  })
-  await Promise.all(promises); isRunningBatchOcr.value = false
+  }
+  isRunningBatchOcr.value = false
 }
 
 const closeBatchOcr = () => { batchOcrActive.value = false; batchOcrResults.value = []; selectedIds.value = [] }
