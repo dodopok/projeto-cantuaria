@@ -1,71 +1,74 @@
+/**
+ * Sitemap dinâmico.
+ * - Pagina as consultas (antes parava nas primeiras 1000 linhas do PostgREST).
+ * - Inclui /texto só quando a obra tem transcrição; não inclui o visualizador /pdf
+ *   (página sem conteúdo próprio, marcada como noindex).
+ * - lastmod usa a data da transcrição quando houver.
+ * - Inclui as capas (image sitemap), que ajudam na busca por imagens.
+ */
 export default defineEventHandler(async (event) => {
-  // Usamos o cliente admin para garantir que buscamos todos os registros ignorando RLS
   const client = useAdminSupabase()
-  const baseUrl = 'https://cantuaria.caminhoanglicano.com.br'
+  const base = PUBLIC_SITE_URL
 
-  // 1. Buscar slugs de documentos, publicações, autores e vídeos
-  const [
-    { data: docs, error: docsErr },
-    { data: pubs, error: pubsErr },
-    { data: authors, error: authorsErr },
-    { data: videos, error: videosErr }
-  ] = await Promise.all([
-    client.from('documents').select('slug, created_at').eq('status', 'published'),
-    client.from('publications').select('slug, created_at'),
-    client.from('authors').select('slug, created_at'),
-    client.from('videos').select('slug, created_at').eq('status', 'published')
-  ])
+  const [docs, pubs, authors, videos] = await Promise.all([
+    // transcribed_at vem da migração de transcrição; sem ela, cai para created_at
+    publishedDocuments(client, 'slug, title, created_at, transcribed_at, thumbnail_url, has_markdown')
+      .catch(() => publishedDocuments(client, 'slug, title, created_at, thumbnail_url, has_markdown')),
+    fetchAllRows((f, t) => client.from('publications').select('slug, created_at').range(f, t)),
+    fetchAllRows((f, t) => client.from('authors').select('slug, created_at, document_authors!inner(document_id)').range(f, t)),
+    fetchAllRows((f, t) => client.from('videos').select('slug, created_at').eq('status', 'published').range(f, t))
+  ]).catch((err) => {
+    console.error('[Sitemap] Erro:', err?.message || err)
+    throw createError({ statusCode: 500, statusMessage: 'Erro ao gerar sitemap' })
+  })
 
-  if (docsErr) console.error('Sitemap Error (Docs):', docsErr)
-  if (pubsErr) console.error('Sitemap Error (Pubs):', pubsErr)
-  if (authorsErr) console.error('Sitemap Error (Authors):', authorsErr)
-  if (videosErr) console.error('Sitemap Error (Videos):', videosErr)
+  const url = (loc: string, opts: { lastmod?: string; priority?: string; image?: { loc: string; title: string } } = {}) =>
+    [
+      '  <url>',
+      `    <loc>${xmlEscape(loc)}</loc>`,
+      opts.lastmod ? `    <lastmod>${opts.lastmod}</lastmod>` : '',
+      opts.priority ? `    <priority>${opts.priority}</priority>` : '',
+      opts.image ? `    <image:image><image:loc>${xmlEscape(opts.image.loc)}</image:loc><image:title>${xmlEscape(opts.image.title)}</image:title></image:image>` : '',
+      '  </url>'
+    ].filter(Boolean).join('\n')
 
-  const sitemap = [
+  const out: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    // Páginas Estáticas
-    `  <url><loc>${baseUrl}/</loc><priority>1.0</priority></url>`,
-    `  <url><loc>${baseUrl}/biblioteca</loc><priority>0.9</priority></url>`,
-    `  <url><loc>${baseUrl}/autores</loc><priority>0.8</priority></url>`,
-    `  <url><loc>${baseUrl}/categorias</loc><priority>0.8</priority></url>`,
-    `  <url><loc>${baseUrl}/publicacoes</loc><priority>0.8</priority></url>`,
-    `  <url><loc>${baseUrl}/contribuir</loc><priority>0.7</priority></url>`,
-    `  <url><loc>${baseUrl}/videos</loc><priority>0.8</priority></url>`
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+    url(`${base}/`, { priority: '1.0' }),
+    url(`${base}/biblioteca`, { priority: '0.9' }),
+    url(`${base}/autores`, { priority: '0.8' }),
+    url(`${base}/categorias`, { priority: '0.8' }),
+    url(`${base}/publicacoes`, { priority: '0.8' }),
+    url(`${base}/videos`, { priority: '0.7' }),
+    url(`${base}/contribuir`, { priority: '0.5' })
   ]
 
-  // 2. Adicionar Publicações
-  pubs?.forEach(pub => {
-    const lastMod = pub.created_at ? new Date(pub.created_at).toISOString() : new Date().toISOString()
-    sitemap.push(`  <url><loc>${baseUrl}/publicacao/${pub.slug}</loc><lastmod>${lastMod}</lastmod><priority>0.7</priority></url>`)
-  })
+  for (const pub of pubs as any[]) out.push(url(`${base}/publicacao/${pub.slug}`, { lastmod: latestIso(pub.created_at), priority: '0.7' }))
 
-  // 3. Adicionar Autores
-  authors?.forEach(author => {
-    const lastMod = author.created_at ? new Date(author.created_at).toISOString() : new Date().toISOString()
-    sitemap.push(`  <url><loc>${baseUrl}/autores/${author.slug}</loc><lastmod>${lastMod}</lastmod><priority>0.6</priority></url>`)
-  })
+  // Só autores com ao menos uma obra (o inner join acima filtra os demais)
+  const seenAuthors = new Set<string>()
+  for (const a of authors as any[]) {
+    if (seenAuthors.has(a.slug)) continue
+    seenAuthors.add(a.slug)
+    out.push(url(`${base}/autores/${a.slug}`, { lastmod: latestIso(a.created_at), priority: '0.6' }))
+  }
 
-  // 4. Adicionar Documentos (Landing, Texto e PDF)
-  docs?.forEach(doc => {
-    const lastMod = doc.created_at ? new Date(doc.created_at).toISOString() : new Date().toISOString()
-    // Landing page da obra
-    sitemap.push(`  <url><loc>${baseUrl}/documento/${doc.slug}</loc><lastmod>${lastMod}</lastmod><priority>0.8</priority></url>`)
-    // Versão em Texto
-    sitemap.push(`  <url><loc>${baseUrl}/documento/${doc.slug}/texto</loc><lastmod>${lastMod}</lastmod><priority>0.7</priority></url>`)
-    // Versão PDF
-    sitemap.push(`  <url><loc>${baseUrl}/documento/${doc.slug}/pdf</loc><lastmod>${lastMod}</lastmod><priority>0.5</priority></url>`)
-  })
+  for (const doc of docs as any[]) {
+    const lastmod = latestIso(doc.created_at, doc.transcribed_at)
+    const isOwnCover = typeof doc.thumbnail_url === 'string' && doc.thumbnail_url.startsWith('http')
+    out.push(url(`${base}/documento/${doc.slug}`, {
+      lastmod,
+      priority: '0.8',
+      image: isOwnCover ? { loc: doc.thumbnail_url, title: doc.title } : undefined
+    }))
+    if (doc.has_markdown) out.push(url(`${base}/documento/${doc.slug}/texto`, { lastmod, priority: '0.7' }))
+  }
 
-  // 5. Adicionar Vídeos
-  videos?.forEach(video => {
-    const lastMod = video.created_at ? new Date(video.created_at).toISOString() : new Date().toISOString()
-    sitemap.push(`  <url><loc>${baseUrl}/videos/${video.slug}</loc><lastmod>${lastMod}</lastmod><priority>0.7</priority></url>`)
-  })
+  for (const v of videos as any[]) out.push(url(`${base}/videos/${v.slug}`, { lastmod: latestIso(v.created_at), priority: '0.6' }))
 
-  sitemap.push('</urlset>')
+  out.push('</urlset>')
 
-  // Configura o header como XML
-  event.node.res.setHeader('Content-Type', 'application/xml')
-  return sitemap.join('\n')
+  setHeader(event, 'Content-Type', 'application/xml; charset=utf-8')
+  return out.join('\n')
 })

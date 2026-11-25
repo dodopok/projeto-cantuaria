@@ -44,7 +44,7 @@
 
     <div v-else-if="document" class="min-h-screen bg-cantuaria-cream">
       <!-- Breadcrumbs & Actions -->
-      <nav class="container mx-auto px-6 py-4 md:py-6 border-b border-cantuaria-oxford/5 flex flex-wrap justify-between items-center gap-4 text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/40">
+      <nav class="container mx-auto px-6 py-4 md:py-6 border-b border-cantuaria-oxford/5 flex flex-wrap justify-between items-center gap-4 text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/60">
         <div class="flex items-center gap-3">
           <NuxtLink to="/biblioteca" class="hover:text-cantuaria-oxford transition-colors">Biblioteca</NuxtLink>
           <span class="w-1 h-1 rounded-full bg-cantuaria-gold/30"></span>
@@ -64,99 +64,121 @@
       </nav>
 
       <!-- Main Content -->
-      <section class="container mx-auto px-6 py-10 md:py-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start">
+      <section class="container mx-auto px-6 py-6 md:py-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-[auto_1fr] gap-x-12 gap-y-6 lg:gap-y-8 lg:gap-x-24 items-start">
           
           <!-- Document Cover & Quick Stats -->
-          <div class="lg:col-span-4 space-y-4">
+          <div class="lg:col-span-4 lg:row-span-2 space-y-4">
             <NuxtLink 
               :to="`/documento/${document.slug}/pdf`"
-              class="relative block group shadow-2xl border border-cantuaria-charcoal/5 cursor-pointer overflow-hidden max-w-sm mx-auto lg:max-w-none"
+              class="relative block group shadow-2xl border border-cantuaria-charcoal/5 cursor-pointer overflow-hidden max-w-[180px] sm:max-w-xs mx-auto lg:max-w-none"
             >
-              <img :src="document.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'" :alt="document.title" class="w-full aspect-[3/4.5] object-cover transition-transform duration-700 group-hover:scale-105" />
+              <img :src="document.thumbnail_url || 'https://images.unsplash.com/photo-1544640808-32ca72ac7f37?q=80&w=1000'" :alt="`Capa: ${document.title}`" fetchpriority="high" class="w-full aspect-[3/4.5] object-cover transition-transform duration-700 group-hover:scale-105" />
               <div class="absolute inset-0 bg-cantuaria-oxford/20 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <div class="bg-white/90 px-6 py-3 rounded-sm shadow-xl">
-                  <span class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-oxford">Clique para Ler</span>
+                  <span class="text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-oxford">Clique para Ler</span>
                 </div>
               </div>
             </NuxtLink>
 
             <!-- Botão de Ação Mobile/Desktop -->
             <div class="pt-2 space-y-3">
-              <NuxtLink :to="`/documento/${document.slug}/pdf`" class="w-full btn-primary py-4 px-8 text-center text-[10px] tracking-[0.2em] font-bold uppercase shadow-xl flex items-center justify-center gap-3 group">
+              <NuxtLink :to="`/documento/${document.slug}/pdf`" class="w-full btn-primary py-4 px-8 text-center text-xs tracking-[0.2em] font-bold uppercase shadow-xl flex items-center justify-center gap-3 group">
                 <LucideBookOpen class="w-4 h-4" />
                 <span>Abrir Original (PDF)</span>
               </NuxtLink>
               <NuxtLink 
                 v-if="document.has_markdown"
                 :to="`/documento/${document.slug}/texto`" 
-                class="w-full block py-4 px-8 text-center text-[10px] tracking-[0.2em] font-bold uppercase border border-cantuaria-oxford/20 text-cantuaria-oxford hover:bg-cantuaria-oxford hover:text-white transition-all flex items-center justify-center gap-3"
+                class="w-full block py-4 px-8 text-center text-xs tracking-[0.2em] font-bold uppercase border border-cantuaria-oxford/20 text-cantuaria-oxford hover:bg-cantuaria-oxford hover:text-white transition-all flex items-center justify-center gap-3"
               >
                 <LucideFileText class="w-4 h-4" />
                 <span>Versão em Texto</span>
               </NuxtLink>
             </div>
 
+            <OrdoPromo v-if="isLiturgicalWork(document)" variant="card" :slug="document.slug" />
+
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-6 md:gap-8 pt-8 border-t border-cantuaria-oxford/10">
               <div>
-                <span class="block text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 mb-1">Publicado em</span>
+                <span class="block text-[11px] uppercase tracking-widest font-bold text-cantuaria-charcoal/60 mb-1">Publicado em</span>
                 <span class="font-serif text-lg text-cantuaria-oxford italic leading-tight">{{ document.publication_year || 'Séc. XIX' }}</span>
               </div>
               <div>
-                <span class="block text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 mb-1">Idioma</span>
+                <span class="block text-[11px] uppercase tracking-widest font-bold text-cantuaria-charcoal/60 mb-1">Idioma</span>
                 <span class="font-sans text-xs font-bold text-cantuaria-oxford uppercase tracking-widest">{{ document.language }}</span>
               </div>
               <div>
-                <span class="block text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 mb-1">Tipo</span>
+                <span class="block text-[11px] uppercase tracking-widest font-bold text-cantuaria-charcoal/60 mb-1">Tipo</span>
                 <span class="font-sans text-xs font-bold text-cantuaria-oxford uppercase tracking-widest">{{ document.type }}</span>
+              </div>
+              <div v-if="document.categories?.name">
+                <span class="block text-[11px] uppercase tracking-widest font-bold text-cantuaria-charcoal/60 mb-1">Categoria</span>
+                <NuxtLink :to="{ path: '/biblioteca', query: { categoria: document.categories.slug } }" class="font-sans text-xs font-bold text-cantuaria-oxford uppercase tracking-widest underline-offset-4 hover:underline hover:text-cantuaria-gold">{{ document.categories.name }}</NuxtLink>
               </div>
             </div>
 
             <!-- Botão de Remoção Discreto -->
             <div class="pt-12 mt-12 border-t border-cantuaria-oxford/5">
-              <button @click="showRemovalModal = true" class="flex items-center gap-2 text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/30 hover:text-cantuaria-crimson transition-colors">
+              <button @click="showRemovalModal = true" class="flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-cantuaria-charcoal/60 hover:text-cantuaria-crimson transition-colors">
                 <LucideAlertCircle class="w-3 h-3" />
                 <span>Solicitar remoção desta obra</span>
               </button>
             </div>
           </div>
 
-          <!-- Document Info & Metadata -->
-          <div class="lg:col-span-8 space-y-10 md:space-y-12">
+          <!-- Título e autoria: no celular vem antes da capa -->
+          <div class="lg:col-span-8 order-first lg:order-none">
             <div>
-              <h1 class="text-4xl md:text-6xl lg:text-7xl font-serif text-cantuaria-oxford leading-[1.1] tracking-tight mb-6 text-balance">
+              <h1 class="text-[1.75rem] md:text-6xl lg:text-7xl font-serif text-cantuaria-oxford leading-[1.15] tracking-tight mb-3 lg:mb-6 text-balance">
                 {{ document.title }}
               </h1>
               
-              <div class="flex flex-col gap-6 mb-8 pb-8 border-b border-cantuaria-oxford/10">
-                <div class="flex flex-wrap items-center gap-6">
+              <div class="flex flex-col gap-3 lg:gap-6 lg:mb-8 lg:pb-8 lg:border-b border-cantuaria-oxford/10">
+                <!-- Celular: autores numa linha só -->
+                <p v-if="document.authors?.length" class="lg:hidden font-serif text-lg text-cantuaria-oxford leading-snug">
+                  <span class="text-cantuaria-charcoal/60 text-base">por </span>
+                  <template v-for="(author, i) in document.authors" :key="author.id">
+                    <NuxtLink :to="`/autores/${author.slug}`" class="hover:text-cantuaria-gold underline-offset-4 hover:underline">{{ author.name }}</NuxtLink><span v-if="i < document.authors.length - 1">, </span>
+                  </template>
+                </p>
+                <div class="hidden lg:flex flex-wrap items-center gap-6">
                   <div v-for="author in document.authors" :key="author.id" class="flex flex-col">
-                    <span class="text-[9px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40 mb-1">Autor</span>
-                    <span class="font-serif text-xl text-cantuaria-oxford leading-none">{{ author.name }}</span>
+                    <span class="text-[11px] uppercase tracking-widest font-bold text-cantuaria-charcoal/60 mb-1">Autor</span>
+                    <NuxtLink :to="`/autores/${author.slug}`" class="font-serif text-xl text-cantuaria-oxford leading-none hover:text-cantuaria-gold underline-offset-4 hover:underline">{{ author.name }}</NuxtLink>
                   </div>
                 </div>
 
-                <!-- Tags do Documento -->
-                <div v-if="document.tags && document.tags.length > 0" class="flex flex-wrap gap-2">
+                <!-- Tags do Documento: no celular uma linha só, com rolagem horizontal sem barra -->
+                <div v-if="document.tags && document.tags.length > 0" class="no-scrollbar -mx-6 px-6 lg:mx-0 lg:px-0 flex flex-nowrap lg:flex-wrap gap-2 overflow-x-auto lg:overflow-visible">
                   <span 
                     v-for="tag in document.tags" 
                     :key="tag.id"
-                    class="px-3 py-1 bg-cantuaria-gold/5 border border-cantuaria-gold/10 text-cantuaria-gold text-[9px] uppercase tracking-widest font-bold rounded-full"
+                    class="shrink-0 whitespace-nowrap px-3 py-1 bg-cantuaria-gold/5 border border-cantuaria-gold/10 text-cantuaria-gold text-[11px] uppercase tracking-widest font-bold rounded-full"
                   >
                     {{ tag.name }}
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
 
+          <!-- Resumo e início do texto -->
+          <div class="lg:col-span-8">
+            <div>
               <div class="max-w-none">
-                <p class="text-lg md:text-xl leading-relaxed text-cantuaria-charcoal/80 font-serif italic mb-10 text-balance">
+                <p class="text-lg md:text-xl leading-relaxed text-cantuaria-charcoal/85 font-serif italic mb-10 whitespace-pre-line">
                   {{ document.summary }}
                 </p>
                 <div class="h-px w-20 bg-cantuaria-gold/30 mb-10"></div>
-                <!-- Mini visualização do texto - Essencial para o Google indexar o conteúdo inicial -->
-                <div class="prose-cantuaria text-cantuaria-charcoal/70 line-clamp-[15] pointer-events-none opacity-80" v-html="document.content_text"></div>
+                <!-- Início do texto, renderizado no servidor (indexação e prévia da leitura) -->
+                <div v-if="document.excerpt" class="relative">
+                  <h2 class="text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-charcoal/70 mb-4">Início do texto</h2>
+                  <p class="font-serif text-base md:text-lg leading-relaxed text-cantuaria-charcoal/80 whitespace-pre-line">{{ document.excerpt }}</p>
+                  <div class="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-cantuaria-cream to-transparent pointer-events-none"></div>
+                </div>
                 <div v-if="document.has_markdown" class="mt-8 flex flex-wrap gap-4">
-                  <NuxtLink :to="`/documento/${document.slug}/texto`" class="text-[10px] uppercase tracking-[0.2em] font-bold text-cantuaria-gold hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group">
+                  <NuxtLink :to="`/documento/${document.slug}/texto`" class="text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-gold hover:text-cantuaria-oxford transition-colors flex items-center gap-2 group">
                     Ler versão em texto completo <LucideArrowRight class="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                   </NuxtLink>
                 </div>
@@ -171,7 +193,7 @@
     <Teleport to="body">
       <div v-if="showRemovalModal" class="fixed inset-0 z-[9999] bg-cantuaria-oxford/90 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md p-8 md:p-10 shadow-2xl relative animate-fade-in">
-          <button @click="showRemovalModal = false" class="absolute top-4 right-4 p-2 text-cantuaria-charcoal/40 hover:text-cantuaria-oxford transition-colors">
+          <button @click="showRemovalModal = false" class="absolute top-4 right-4 p-2 text-cantuaria-charcoal/60 hover:text-cantuaria-oxford transition-colors">
             <LucideX class="w-5 h-5" />
           </button>
           
@@ -182,15 +204,15 @@
 
           <form @submit.prevent="submitRemovalRequest" class="space-y-6">
             <div class="space-y-1">
-              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Seu Nome</label>
+              <label class="text-xs uppercase tracking-widest font-bold text-cantuaria-charcoal/60">Seu Nome</label>
               <input v-model="removalForm.name" type="text" required class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-gold text-sm bg-transparent" />
             </div>
             <div class="space-y-1">
-              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">E-mail de Contato</label>
+              <label class="text-xs uppercase tracking-widest font-bold text-cantuaria-charcoal/60">E-mail de Contato</label>
               <input v-model="removalForm.email" type="email" required class="w-full border-b border-cantuaria-charcoal/10 py-2 focus:outline-none focus:border-cantuaria-gold text-sm bg-transparent" />
             </div>
             <div class="space-y-1">
-              <label class="text-[10px] uppercase tracking-widest font-bold text-cantuaria-charcoal/40">Motivo da Solicitação</label>
+              <label class="text-xs uppercase tracking-widest font-bold text-cantuaria-charcoal/60">Motivo da Solicitação</label>
               <textarea v-model="removalForm.reason" required rows="4" class="w-full border border-cantuaria-charcoal/10 p-3 focus:outline-none focus:border-cantuaria-gold text-sm leading-relaxed bg-cantuaria-cream/10 resize-none"></textarea>
             </div>
 
@@ -198,7 +220,7 @@
               <button 
                 type="submit" 
                 :disabled="submittingRemoval"
-                class="w-full py-4 bg-cantuaria-oxford text-white text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 transition-all disabled:opacity-50"
+                class="w-full py-4 bg-cantuaria-oxford text-white text-xs uppercase tracking-[0.2em] font-bold hover:bg-cantuaria-oxford/90 transition-all disabled:opacity-50"
               >
                 <LucideLoader2 v-if="submittingRemoval" class="w-4 h-4 animate-spin mx-auto" />
                 <span v-else>Enviar Solicitação</span>
@@ -237,77 +259,70 @@ const { data: document, pending } = await useAsyncData(`document-${route.params.
 useSeoMeta({
   title: computed(() => document.value ? `${document.value.title} | Projeto Cantuária` : 'Obra | Projeto Cantuária'),
   ogTitle: computed(() => document.value ? `${document.value.title} | Projeto Cantuária` : 'Obra | Projeto Cantuária'),
-  description: computed(() => document.value?.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.'),
+  description: computed(() => document.value?.summary?.slice(0, 300) || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.'),
   ogDescription: computed(() => document.value?.summary || 'Obra histórica da tradição anglicana disponível na Biblioteca Digital Cantuária.'),
   ogImage: computed(() => document.value?.thumbnail_url),
-  ogUrl: computed(() => `https://cantuaria.caminhoanglicano.com.br/documento/${document.value?.slug}`),
   twitterCard: 'summary_large_image',
   twitterTitle: computed(() => document.value?.title),
   twitterDescription: computed(() => document.value?.summary)
 })
 
-// Dados Estruturados (Schema.org) & Canonical
+// Dados estruturados (Schema.org): obra + trilha de navegação
 useHead(() => {
   if (!document.value) return {}
-  
-  const baseUrl = 'https://cantuaria.caminhoanglicano.com.br'
-  const url = `${baseUrl}/documento/${document.value.slug}`
-  
-  const authors = document.value.authors?.map((a: any) => ({
-    "@type": "Person",
-    "name": a.name,
-    "url": `${baseUrl}/autores/${a.slug}`
-  })) || []
+  const d: any = document.value
+  const url = `${SITE_URL}/documento/${d.slug}`
 
-  // Mapeamento dinâmico de tipos
   const typeMap: Record<string, string> = {
-    'Livro': 'CreativeWork',
-    'LOC': 'CreativeWork',
-    'Revista': 'CreativeWork',
-    'Artigo': 'Article',
-    'Documento': 'Article',
-    'Foto': 'VisualArtwork'
+    Livro: 'Book',
+    LOC: 'Book',
+    Revista: 'PublicationIssue',
+    Artigo: 'ScholarlyArticle',
+    Documento: 'ArchiveComponent',
+    Foto: 'Photograph'
   }
-  const schemaType = typeMap[document.value.type] || 'CreativeWork'
+  const schemaType = typeMap[d.type] || 'CreativeWork'
 
-  // Formatação de Datas ISO 8601
-  const publishedDate = document.value.publication_year 
-    ? `${document.value.publication_year}-01-01T08:00:00+00:00`
-    : document.value.created_at
-  
-  const modifiedDate = document.value.created_at || new Date().toISOString()
+  const work: Record<string, any> = {
+    '@type': schemaType,
+    '@id': `${url}#obra`,
+    name: d.title,
+    headline: d.title,
+    url,
+    author: (d.authors || []).map((a: any) => ({ '@type': 'Person', name: a.name, url: `${SITE_URL}/autores/${a.slug}` })),
+    datePublished: d.publication_year ? String(d.publication_year) : undefined,
+    inLanguage: d.language === 'Português' ? 'pt' : d.language,
+    description: d.summary || undefined,
+    genre: d.categories?.name || undefined,
+    keywords: (d.tags || []).map((t: any) => t.name).join(', ') || undefined,
+    image: d.thumbnail_url?.startsWith('http') ? d.thumbnail_url : undefined,
+    isAccessibleForFree: true,
+    encoding: d.file_url ? { '@type': 'MediaObject', contentUrl: d.file_url, encodingFormat: 'application/pdf' } : undefined,
+    subjectOf: d.has_markdown ? { '@type': 'WebPage', url: `${url}/texto`, name: `${d.title} (texto integral)` } : undefined,
+    holdingArchive: schemaType === 'ArchiveComponent' ? { '@id': `${SITE_URL}/#organizacao` } : undefined,
+    provider: { '@id': `${SITE_URL}/#organizacao` },
+    mainEntityOfPage: url
+  }
 
   return {
-    link: [
-      { rel: 'canonical', href: url }
-    ],
-    script: [
-      {
-        type: 'application/ld+json',
-        innerHTML: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": schemaType,
-          [schemaType === 'Article' ? 'headline' : 'name']: document.value.title,
-          "author": authors,
-          "datePublished": publishedDate,
-          "dateModified": modifiedDate,
-          "description": document.value.summary,
-          "image": [document.value.thumbnail_url],
-          "publisher": {
-            "@type": "Organization",
-            "name": "Projeto Cantuária",
-            "logo": {
-              "@type": "ImageObject",
-              "url": `${baseUrl}/favicon.svg`
-            }
-          },
-          "mainEntityOfPage": {
-            "@type": "WebPage",
-            "@id": url
+    script: [{
+      type: 'application/ld+json',
+      key: 'ld-obra',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          work,
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Biblioteca', item: `${SITE_URL}/biblioteca` },
+              ...(d.categories?.name ? [{ '@type': 'ListItem', position: 2, name: d.categories.name, item: `${SITE_URL}/biblioteca?categoria=${d.categories.slug}` }] : []),
+              { '@type': 'ListItem', position: d.categories?.name ? 3 : 2, name: d.title, item: url }
+            ]
           }
-        })
-      }
-    ]
+        ]
+      })
+    }]
   }
 })
 
@@ -383,6 +398,9 @@ onMounted(() => {
 </script>
 
 <style lang="postcss">
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 .prose-cantuaria {
   @apply font-serif leading-relaxed text-cantuaria-charcoal;
   

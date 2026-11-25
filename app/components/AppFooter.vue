@@ -12,11 +12,14 @@
           Uma biblioteca pública digital dedicada à preservação e disseminação da produção litúrgica, teológica e histórica anglicana.
         </p>
         <div class="pt-6 border-t border-white/5">
-          <p class="text-[10px] uppercase tracking-widest font-bold text-white/30 mb-2">Iniciativa</p>
+          <p class="text-xs uppercase tracking-widest font-bold text-white/60 mb-2">Iniciativa</p>
           <a href="https://www.caminhoanglicano.com.br/" target="_blank" class="group flex items-center gap-2 text-sm text-cantuaria-cream/60 hover:text-cantuaria-gold transition-colors">
             Parte do <span class="text-white font-medium group-hover:text-cantuaria-gold transition-colors">Caminho Anglicano</span>
             <LucideExternalLink class="w-3 h-3 opacity-30 group-hover:opacity-100 transition-opacity" />
           </a>
+          <div class="mt-4">
+            <OrdoPromo variant="inline" dark />
+          </div>
         </div>
       </div>
 
@@ -35,6 +38,8 @@
         <ul class="space-y-3 text-sm">
           <li><NuxtLink to="/pesquisa" class="hover:text-cantuaria-gold transition-colors">Pesquisa Avançada</NuxtLink></li>
           <li><NuxtLink to="/contribuir" class="hover:text-cantuaria-gold transition-colors">Enviar Documento</NuxtLink></li>
+          <li><a :href="links.site" class="hover:text-cantuaria-gold transition-colors">Ordo: app de Ofício Diário</a></li>
+          <li><a :href="links.guiaLoc" class="hover:text-cantuaria-gold transition-colors">Guia do Livro de Oração Comum</a></li>
         </ul>
       </div>
 
@@ -48,7 +53,7 @@
         </a>
       </div>
     </div>
-    <div class="container mx-auto px-6 mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-white/40">
+    <div class="container mx-auto px-6 mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs uppercase tracking-widest text-white/60">
       <span>&copy; {{ new Date().getFullYear() }} Projeto Cantuária. Ad Majorem Dei Gloriam.</span>
       <div class="flex gap-6 italic lowercase">
         <span>Desenvolvido com Nuxt & Supabase</span>
@@ -59,4 +64,6 @@
 
 <script setup lang="ts">
 import { ExternalLink as LucideExternalLink } from 'lucide-vue-next'
+
+const links = ORDO
 </script>

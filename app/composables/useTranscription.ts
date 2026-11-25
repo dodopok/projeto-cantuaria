@@ -24,7 +24,8 @@ export const useTranscription = () => {
     documentId: string,
     opts: { onProgress?: (p: TranscriptionProgress) => void; concurrency?: number; restart?: boolean } = {}
   ) => {
-    const concurrency = opts.concurrency ?? 3
+    // 6 partes em paralelo: o custo é por token (não muda); só o tempo cai
+    const concurrency = opts.concurrency ?? 6
     let state = await $fetch<State>('/api/admin/transcription/start', {
       method: 'POST',
       body: { documentId, restart: !!opts.restart }
