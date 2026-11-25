@@ -47,16 +47,21 @@
           </div>
         </div>
 
-        <!-- Sobre esta obra: resposta direta antes do texto (útil para leitores, buscadores e IAs) -->
-        <section v-if="document.summary" class="mb-12 p-5 md:p-6 bg-cantuaria-cream/60 border-l-4 border-cantuaria-gold" aria-labelledby="sobre-obra">
-          <h2 id="sobre-obra" class="text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-oxford mb-3">Sobre esta obra</h2>
+        <!-- Sobre esta obra: recolhível e fechado por padrão; o texto continua no HTML (leitores, buscadores e IAs) -->
+        <details v-if="document.summary" class="sobre-obra group mb-12 bg-cantuaria-cream/60 border-l-4 border-cantuaria-gold">
+          <summary class="flex items-center justify-between gap-4 cursor-pointer list-none p-5 md:px-6 min-h-[44px] text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-oxford">
+            <h2 class="m-0 font-sans text-xs">Sobre esta obra</h2>
+            <LucideChevronDown class="w-4 h-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div class="px-5 pb-5 md:px-6 md:pb-6">
           <p class="font-serif text-lg leading-relaxed text-cantuaria-charcoal/90 whitespace-pre-line">{{ document.summary }}</p>
           <p class="mt-4 text-sm text-cantuaria-charcoal/70 leading-relaxed">
             Transcrição integral gerada por IA a partir do
             <NuxtLink :to="`/documento/${document.slug}/pdf`" class="underline underline-offset-2 hover:text-cantuaria-oxford">PDF original</NuxtLink>.
             Também disponível em <a :href="`/documento/${document.slug}/texto.md`" class="underline underline-offset-2 hover:text-cantuaria-oxford">Markdown</a>.
           </p>
-        </section>
+          </div>
+        </details>
 
         <!-- Rendered Markdown -->
         <div class="prose-cantuaria" v-html="renderedMarkdown"></div>
@@ -94,7 +99,8 @@ import {
   Share2 as LucideShare2,
   FileDown as LucideFileDown,
   BookOpen as LucideBookOpen,
-  ChevronUp as LucideChevronUp
+  ChevronUp as LucideChevronUp,
+  ChevronDown as LucideChevronDown
 } from 'lucide-vue-next'
 import { Marked } from 'marked'
 
@@ -185,6 +191,8 @@ onUnmounted(() => {
 </script>
 
 <style lang="postcss">
+.sobre-obra > summary::-webkit-details-marker { display: none; }
+
 /* Reutilizando os estilos prose-cantuaria já definidos no componente pai para consistência */
 .prose-cantuaria {
   @apply font-serif leading-relaxed text-cantuaria-charcoal;
