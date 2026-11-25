@@ -7,12 +7,10 @@ export default defineEventHandler(async (event) => {
   const isFull = query.full === 'true'
   const adminSupabase = useAdminSupabase()
 
-  console.log(`[API GET] Buscando obra com identificador: "${idOrSlug}" (Full: ${isFull})`)
-
   if (!idOrSlug || idOrSlug === 'undefined') {
     throw createError({ 
       statusCode: 400, 
-      statusMessage: `Identificador inválido. Recebido: ${idOrSlug}` 
+      statusMessage: 'Identificador inválido.'
     })
   }
 
@@ -20,15 +18,21 @@ export default defineEventHandler(async (event) => {
   const cleanSlug = idOrSlug.toLowerCase().trim()
 
   // Seleção de colunas: excluímos content_markdown por padrão se não for 'full'
-  const selectQuery = isFull 
-    ? '*, authors(*), categories(*), tags(*)' 
-    : 'id, title, slug, summary, content_text, file_url, thumbnail_url, type, language, publication_year, created_at, status, has_markdown, authors(*), categories(*), tags(*)'
+  // Colunas explícitas: nunca expor campos internos (file_hash, search_metadata, search_vector)
+  const baseColumns = 'id, title, slug, summary, content_text, file_url, thumbnail_url, type, language, publication_year, publication_id, created_at, status, views_count, has_markdown, authors(*), categories(*), tags(*)'
+  const selectQuery = isFull ? `${baseColumns}, content_markdown` : baseColumns
 
-  const { data, error } = await adminSupabase
+  // Só administradores enxergam documentos ainda não publicados (sugestões pendentes)
+  const isAdmin = await isAdminRequest(event)
+
+  let dbQuery = adminSupabase
     .from('documents')
     .select(selectQuery)
     .eq('slug', cleanSlug)
-    .maybeSingle()
+
+  if (!isAdmin) dbQuery = dbQuery.eq('status', 'published')
+
+  const { data, error } = await dbQuery.maybeSingle()
 
   if (error) {
     console.error(`[API GET] Erro no Supabase:`, error)
@@ -36,7 +40,6 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!data) {
-    console.warn(`[API GET] Obra não encontrada no banco para o slug: "${cleanSlug}"`)
     throw createError({
       statusCode: 404,
       statusMessage: 'Obra não encontrada'

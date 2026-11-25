@@ -13,18 +13,8 @@ export default defineEventHandler(async (event) => {
 
   if (!doc) throw createError({ statusCode: 404, statusMessage: 'Documento não encontrado' })
 
-  // 2. Tentar deletar arquivos do Storage se forem do nosso bucket
-  const extractPath = (url: string) => url?.split('/public/')[1]?.split('?')[0]
-  
-  if (doc.file_url) {
-    const filePath = extractPath(doc.file_url)
-    if (filePath) await adminSupabase.storage.from('documents').remove([filePath])
-  }
-  
-  if (doc.thumbnail_url && doc.thumbnail_url.includes('covers/')) {
-    const coverPath = extractPath(doc.thumbnail_url)
-    if (coverPath) await adminSupabase.storage.from('covers').remove([coverPath])
-  }
+  // 2. Remover PDF e capa do Storage
+  await removeDocumentFiles(adminSupabase, [doc])
 
   // 3. Deletar do Banco (o RLS/Cascade cuidará das tabelas pivot se configurado)
   const { error } = await adminSupabase.from('documents').delete().eq('id', id)

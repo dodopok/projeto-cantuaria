@@ -32,8 +32,10 @@ O **Projeto Cantuária** é uma plataforma digital centralizada para a preserva�
 
 ## 🔒 Arquitetura de Segurança
 
-- **Client-Side:** Protegido por RLS, garantindo que usuários públicos acessem apenas documentos aprovados e publicados.
-- **Server-Side:** Integrações sensíveis (IA e Admin) isoladas em rotas de API seguras, utilizando a `SERVICE_ROLE_KEY` para operações privilegiadas.
+- **Papel de administrador:** definido em `app_metadata.role = 'admin'` no Supabase Auth (só a service role altera). O mesmo critério vale no servidor (`server/utils/auth.ts`) e no RLS (`public.is_admin()`).
+- **Server-Side:** as rotas em `server/api` usam a `SERVICE_ROLE_KEY`, por isso `server/middleware/admin-guard.ts` bloqueia por padrão: `/api/admin/**` e qualquer escrita (POST/PUT/PATCH/DELETE) exigem administrador, exceto as rotas públicas listadas no próprio arquivo.
+- **Client-Side:** RLS garante que o público só leia obras publicadas e só envie sugestões (`status = 'pending'`) e arquivos em `documents/uploads/`.
+- **Migrações:** mudanças de banco ficam em `supabase/migrations/` (os `.sql` da raiz são histórico).
 
 ## 🚀 Como Iniciar
 
