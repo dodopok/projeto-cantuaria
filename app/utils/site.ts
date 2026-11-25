@@ -33,7 +33,7 @@ export const ordoBookFor = (slug?: string | null) => {
   return book ? { url: `${ORDO.web}livros-de-oracao/${book.id}`, label: book.label } : null
 }
 
-/** Obras litúrgicas: onde faz sentido convidar para rezar o Ofício Diário. */
+/** Obras litúrgicas: onde faz sentido convidar para orar o Ofício Diário. */
 export const isLiturgicalWork = (doc: { type?: string | null; title?: string | null; categories?: { name?: string } | null }) =>
   doc?.type === 'LOC' ||
   /ora[cç][aã]o comum|common prayer|of[ií]cio di[aá]rio|liturgi/i.test(`${doc?.title || ''} ${doc?.categories?.name || ''}`)

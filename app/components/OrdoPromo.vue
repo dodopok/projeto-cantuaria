@@ -6,7 +6,7 @@
         <p class="text-xs uppercase tracking-[0.25em] font-bold text-cantuaria-gold">Do mesmo ecossistema · Caminho Anglicano</p>
         <h2 id="ordo-titulo" class="text-4xl md:text-5xl font-serif leading-tight">Do acervo para a oração diária: conheça o Ordo</h2>
         <p class="text-white/80 text-lg leading-relaxed">
-          Muitas obras desta biblioteca nasceram para ser rezadas. O <strong class="text-white">Ordo</strong> é o app de
+          Muitas obras desta biblioteca nasceram para a oração. O <strong class="text-white">Ordo</strong> é o app de
           <a :href="links.oficioDiario" class="underline decoration-cantuaria-gold/60 underline-offset-4 hover:text-cantuaria-gold">Ofício Diário</a>
           que monta os salmos, as leituras, os cânticos e as orações de cada dia segundo o calendário litúrgico e o
           <a :href="links.appLoc" class="underline decoration-cantuaria-gold/60 underline-offset-4 hover:text-cantuaria-gold">Livro de Oração Comum</a> da sua igreja.
@@ -37,11 +37,11 @@
   </section>
 
   <!-- Cartão contextual (página de obra litúrgica) -->
-  <aside v-else-if="variant === 'card'" class="border border-cantuaria-gold/30 bg-white p-6 space-y-3" aria-label="Rezar com o Ordo">
-    <p class="text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-gold">Rezar com este livro</p>
+  <aside v-else-if="variant === 'card'" class="border border-cantuaria-gold/30 bg-white p-6 space-y-3" aria-label="Orar com o Ordo">
+    <p class="text-xs uppercase tracking-[0.2em] font-bold text-cantuaria-gold">Orar com este livro</p>
     <p class="font-serif text-xl text-cantuaria-oxford leading-snug">
       <template v-if="book">O {{ book.label }} está no Ordo, pronto para o Ofício Diário de hoje.</template>
-      <template v-else>Reze o Ofício Diário com o Livro de Oração da sua igreja no Ordo.</template>
+      <template v-else>Ore o Ofício Diário com o Livro de Oração da sua igreja no Ordo.</template>
     </p>
     <p class="text-sm text-cantuaria-charcoal/80 leading-relaxed">
       Salmos, leituras e orações do dia montados segundo o calendário litúrgico. Grátis, sem anúncios, no iPhone, Android e web.
@@ -56,7 +56,7 @@
 
   <!-- Linha discreta (rodapé / fim da leitura) -->
   <p v-else class="text-sm leading-relaxed" :class="dark ? 'text-cantuaria-cream/70' : 'text-cantuaria-charcoal/80'">
-    Para rezar o Ofício Diário com os Livros de Oração Comum, use o
+    Para orar o Ofício Diário com os Livros de Oração Comum, use o
     <a :href="links.site" target="_blank" rel="noopener" class="font-semibold underline underline-offset-4" :class="dark ? 'text-white hover:text-cantuaria-gold' : 'text-cantuaria-oxford hover:text-cantuaria-gold'">Ordo, app de Ofício Diário</a>.
   </p>
 </template>
