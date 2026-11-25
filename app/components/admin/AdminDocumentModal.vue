@@ -18,7 +18,7 @@
               <button v-if="modelValue.file_url?.toLowerCase().endsWith('.pdf')" @click="$emit('runOcr')" :disabled="analyzing || publishing || performingOCR" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-gold text-cantuaria-gold text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-gold hover:text-white transition-all disabled:opacity-50">
                 <LucideLoader2 v-if="performingOCR" class="w-3.5 h-3.5 animate-spin" />
                 <LucideScanText v-else class="w-3.5 h-3.5" />
-                {{ performingOCR ? 'Gerando Markdown...' : 'OCR com Gemini' }}
+                {{ performingOCR ? `Transcrevendo… ${ocrProgress || ''}` : (modelValue.content_markdown ? 'Transcrever de novo (Claude)' : 'Transcrever com Claude') }}
               </button>
               <button @click="$emit('analyze')" :disabled="analyzing || publishing || performingOCR" class="flex items-center gap-2 px-4 py-2 border border-cantuaria-oxford text-cantuaria-oxford text-[10px] uppercase tracking-widest font-bold hover:bg-cantuaria-oxford hover:text-white transition-all disabled:opacity-50">
                 <LucideSparkles class="w-3.5 h-3.5" :class="{ 'animate-spin': analyzing }" />
@@ -94,7 +94,7 @@
               rows="12" 
               v-model="modelValue.content_markdown" 
               :disabled="publishing" 
-              placeholder="Cole aqui a transcrição em Markdown ou use o OCR com Gemini..."
+              placeholder="Cole aqui a transcrição em Markdown ou use “Transcrever com Claude”..."
               class="w-full border border-cantuaria-charcoal/10 p-4 focus:outline-none focus:border-cantuaria-oxford font-mono text-xs leading-relaxed bg-cantuaria-charcoal/[0.02] disabled:opacity-50 min-h-[300px]"
             ></textarea>
           </div>
@@ -137,6 +137,7 @@ defineProps<{
   uploadingCover: boolean
   capturingPdf: boolean
   performingOCR: boolean
+  ocrProgress?: string
 }>()
 
 defineEmits([
