@@ -20,7 +20,8 @@ export default defineEventHandler(async (event) => {
   // Seleção de colunas: excluímos content_markdown por padrão se não for 'full'
   // Colunas explícitas: nunca expor campos internos (file_hash, search_metadata, search_vector)
   const baseColumns = 'id, title, slug, summary, content_text, file_url, thumbnail_url, type, language, publication_year, publication_id, created_at, status, views_count, has_markdown, authors(*), categories(*), tags(*)'
-  const selectQuery = isFull ? `${baseColumns}, content_markdown` : baseColumns
+  // content_markdown é sempre lido: no modo resumido vira só um trecho inicial (excerpt)
+  const selectQuery = `${baseColumns}, content_markdown`
 
   // Só administradores enxergam documentos ainda não publicados (sugestões pendentes)
   const isAdmin = await isAdminRequest(event)
@@ -44,6 +45,18 @@ export default defineEventHandler(async (event) => {
       statusCode: 404,
       statusMessage: 'Obra não encontrada'
     })
+  }
+
+  if (!isFull) {
+    const doc: any = data
+    const plain = (doc.content_markdown || '')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/[*_>`]/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+    doc.excerpt = plain ? (plain.length > 1500 ? `${plain.slice(0, 1500).replace(/\s+\S*$/, '')}…` : plain) : null
+    delete doc.content_markdown
+    return doc
   }
 
   return data
