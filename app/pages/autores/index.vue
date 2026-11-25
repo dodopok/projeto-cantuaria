@@ -50,8 +50,10 @@
 <script setup lang="ts">
 import { User as LucideUser, Loader2 as LucideLoader2 } from 'lucide-vue-next'
 
-const authors = ref<any[]>([])
-const loading = ref(true)
+// Renderizado no servidor (lista completa de autores no HTML, com links internos)
+const { data: authorsData, pending } = await useAsyncData('authors-list', () => $fetch('/api/authors'))
+const authors = computed(() => (authorsData.value as any[]) || [])
+const loading = computed(() => pending.value && !authorsData.value)
 
 useSeoMeta({
   title: 'Autores & Tradutores | Projeto Cantuária',
@@ -62,16 +64,4 @@ useSeoMeta({
   twitterCard: 'summary_large_image'
 })
 
-const fetchAuthors = async () => {
-  try {
-    const data = await $fetch('/api/authors')
-    authors.value = data as any[]
-  } catch (err) {
-    console.error('Erro ao buscar autores:', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(fetchAuthors)
 </script>
